@@ -69,38 +69,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const fileKey = `${user.id}/${fileName}`;
-    const supabase = createSupabaseAdminClient();
-    const { data: existingRecord, error: fetchError } = await supabase
-      .from('files')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('file_key', fileKey)
-      .limit(1)
-      .single();
+    const apiUrl = process.env.NEXT_PUBLIC_BIBLO_API_URL || 'http://localhost:3001/api/v0';
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      return res.status(500).json({ error: fetchError.message });
-    }
     let objSize = fileSize;
-    if (existingRecord) {
-      objSize = existingRecord.file_size;
-    } else {
-      const { data: inserted, error: insertError } = await supabase
-        .from('files')
-        .insert([
-          {
-            user_id: user.id,
-            book_hash: bookHash ?? null,
-            replica_kind: replicaKind ?? null,
-            replica_id: replicaId ?? null,
-            file_key: fileKey,
-            file_size: fileSize,
-          },
-        ])
-        .select()
-        .single();
-      console.log('Inserted record:', inserted);
-      if (insertError) return res.status(500).json({ error: insertError.message });
+    try {
+      const response = await fetch(`${apiUrl}/storage/upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: req.headers.authorization || `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fileName,
+          fileSize,
+          bookHash,
+          replicaKind,
+          replicaId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        return res
+          .status(response.status)
+          .json({ error: errData.error || 'Failed to save metadata' });
+      }
+
+      const fileMetadata = await response.json();
+      if (fileMetadata && fileMetadata.size) {
+        objSize = fileMetadata.size;
+      }
+    } catch (error: any) {
+      console.error('Error saving file metadata to backend:', error);
+      return res.status(500).json({ error: 'Could not connect to storage metadata server' });
     }
 
     try {
