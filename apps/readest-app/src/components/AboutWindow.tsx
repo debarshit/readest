@@ -6,6 +6,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { parseWebViewInfo } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
+import { writeTextToClipboard } from '@/utils/clipboard';
+import { eventDispatcher } from '@/utils/event';
 import SupportLinks from './SupportLinks';
 import LegalLinks from './LegalLinks';
 import Dialog from './Dialog';
@@ -78,6 +80,21 @@ export const AboutWindow = () => {
   const handleClose = () => {
     setIsOpen(false);
     setUpdateStatus(null);
+  };
+
+  const versionInfo = `${_('Version {{version}}', { version: getAppVersion() })} (${browserInfo})`;
+
+  // Mobile users can't select the version string to paste it into a bug
+  // report, so the label itself copies it.
+  const handleCopyVersion = async () => {
+    const copied = await writeTextToClipboard(versionInfo);
+    if (!copied) return;
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message: _('Copied to clipboard'),
+      className: 'whitespace-nowrap',
+      timeout: 2000,
+    });
   };
 
   return (
