@@ -31,6 +31,8 @@ interface AnnotationPopupProps {
   onToggleGlobal?: () => void;
   onHighlight: (update?: boolean) => void;
   onDismiss: () => void;
+  reaction?: string;
+  onSelectReaction?: (emoji: string | null) => void;
 }
 
 const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
@@ -51,6 +53,8 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   onToggleGlobal,
   onHighlight,
   onDismiss,
+  reaction,
+  onSelectReaction,
 }) => {
   return (
     <div dir={dir}>
@@ -110,6 +114,8 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
                 globalToggleActive={globalToggleActive}
                 onToggleGlobal={onToggleGlobal}
                 onHandleHighlight={onHighlight}
+                reaction={reaction}
+                onSelectReaction={onSelectReaction}
               />
             )
           )}

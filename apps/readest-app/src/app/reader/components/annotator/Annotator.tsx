@@ -232,7 +232,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const annotPopupWidth = selection?.annotated
     ? annotPopupMaxWidth
     : Math.min(Math.max(visibleToolCount, 1) * annotPopupToolSize, annotPopupMaxWidth);
-  const annotPopupHeight = useResponsiveSize(44);
+  const annotPopupHeight = highlightOptionsVisible ? useResponsiveSize(84) : useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
   // Reposition popups on scroll without dismissing them
@@ -281,7 +281,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setProofreadPopupPosition(proofreadPopupPos);
     setTrianglePosition(triangPos);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection, bookKey, viewSettings.vertical]);
+  }, [selection, bookKey, viewSettings.vertical, highlightOptionsVisible]);
 
   useEffect(() => {
     const highlightStyle = settings.globalReadSettings.highlightStyle;
@@ -503,7 +503,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const isBwEink = viewSettings.isEink && !viewSettings.isColorEink;
     const detail = (event as CustomEvent).detail;
     const { draw, annotation, doc, range } = detail;
-    const { style, color } = annotation as BookNote;
+    const { style, color, reaction } = annotation as BookNote;
     const value = (annotation as BookNote & { value?: string }).value;
     const hexColor = getHighlightColorHex(settings, color);
     const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
@@ -513,36 +513,81 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // two overlays and must draw a highlight for the cfi overlay AND a bubble
     // for the note overlay. Keying off `note` drew only the bubble (#4511).
     const kind = decideAnnotationDraw(value, style);
-    if (kind === 'bubble') {
-      const { defaultView } = doc;
-      const node = range.startContainer;
-      const el = node.nodeType === 1 ? node : node.parentElement;
-      const { writingMode } = defaultView.getComputedStyle(el);
-      draw(Overlayer.bubble, { writingMode });
-    } else if (kind === 'highlight') {
-      draw(Overlayer.highlight, {
-        color: isBwEink ? einkBgColor : hexColor,
-        vertical: viewSettings.vertical,
-      });
-    } else if (kind === 'underline' || kind === 'squiggly') {
-      const { defaultView } = doc;
-      const node = range.startContainer;
-      const el = node.nodeType === 1 ? node : node.parentElement;
-      const { writingMode, lineHeight, fontSize } = defaultView.getComputedStyle(el);
-      const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
-      const lineHeightValue = parseFloat(lineHeight) || viewSettings.lineHeight * fontSizeValue;
-      const strokeWidth = 2;
-      const verticalCompensation = appService?.isMobile ? 0 : -1;
-      const horizontalCompensation = appService?.isMobile ? -1 : 0;
-      const padding = viewSettings.vertical
-        ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
-        : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
-      draw(Overlayer[kind], {
-        writingMode,
-        color: isBwEink ? einkFgColor : hexColor,
-        padding,
-      });
-    }
+
+    const drawCombined = (rects: any[]) => {
+      const parentG = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+      let styleG = null;
+
+      if (kind === 'bubble') {
+        const { defaultView } = doc;
+        const node = range.startContainer;
+        const el = node.nodeType === 1 ? node : node.parentElement;
+        const { writingMode } = defaultView.getComputedStyle(el);
+        styleG = Overlayer.bubble(rects, { writingMode });
+      } else if (kind === 'highlight') {
+        styleG = Overlayer.highlight(rects, {
+          color: isBwEink ? einkBgColor : hexColor,
+          vertical: viewSettings.vertical,
+        });
+      } else if (kind === 'underline' || kind === 'squiggly') {
+        const { defaultView } = doc;
+        const node = range.startContainer;
+        const el = node.nodeType === 1 ? node : node.parentElement;
+        const { writingMode, lineHeight, fontSize } = defaultView.getComputedStyle(el);
+        const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
+        const lineHeightValue = parseFloat(lineHeight) || viewSettings.lineHeight * fontSizeValue;
+        const strokeWidth = 2;
+        const verticalCompensation = appService?.isMobile ? 0 : -1;
+        const horizontalCompensation = appService?.isMobile ? -1 : 0;
+        const padding = viewSettings.vertical
+          ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
+          : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
+        styleG = Overlayer[kind](rects, {
+          writingMode,
+          color: isBwEink ? einkFgColor : hexColor,
+          padding,
+        });
+      }
+
+      if (styleG) {
+        parentG.appendChild(styleG);
+      }
+
+      // Render reaction emoji if present (on highlight layer, not note-bubble to avoid duplicate emojis)
+      if (reaction && kind !== 'bubble' && rects.length > 0) {
+        const size = 20;
+        const firstRect = rects[0];
+        if (firstRect) {
+          const foreignObject = doc.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+          const x = firstRect.right - size / 2;
+          const y = firstRect.top - size - 2;
+
+          foreignObject.setAttribute('x', x.toString());
+          foreignObject.setAttribute('y', y.toString());
+          foreignObject.setAttribute('width', size.toString());
+          foreignObject.setAttribute('height', size.toString());
+
+          const div = doc.createElement('div');
+          div.style.width = '100%';
+          div.style.height = '100%';
+          div.style.display = 'flex';
+          div.style.alignItems = 'center';
+          div.style.justifyContent = 'center';
+          div.style.fontSize = '14px';
+          div.style.lineHeight = '1';
+          div.style.filter = 'drop-shadow(0px 1px 2px rgba(0,0,0,0.3))';
+          div.style.cursor = 'pointer';
+          div.style.userSelect = 'none';
+          div.textContent = reaction;
+
+          foreignObject.appendChild(div);
+          parentG.appendChild(foreignObject);
+        }
+      }
+      return parentG;
+    };
+
+    draw(drawCombined);
   };
 
   const onShowAnnotation = (event: Event) => {
@@ -1260,6 +1305,71 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       saveConfig(envConfig, bookKey, updatedConfig, settings);
     }
     return created;
+  };
+
+  const handleSelectReaction = (reaction: string | null) => {
+    if (!selection) return;
+    const { booknotes: annotations = [] } = config;
+    const cfi = selection.cfi || view?.getCFI(selection.index, selection.range);
+    if (!cfi) return;
+
+    const views = getViewsById(bookKey.split('-')[0]!);
+    const existingIndex = annotations.findIndex(
+      (annotation) =>
+        annotation.cfi === cfi &&
+        annotation.type === 'annotation' &&
+        annotation.style &&
+        !annotation.deletedAt,
+    );
+
+    if (existingIndex !== -1) {
+      const existing = annotations[existingIndex]!;
+      views.forEach((view) => view?.addAnnotation(existing, true));
+      if (existing.global) {
+        views.forEach((view) => removeGlobalAnnotationOverlays(view, existing));
+      }
+      const updated = {
+        ...existing,
+        reaction: reaction ?? undefined,
+        updatedAt: Date.now(),
+      };
+      if (!reaction) {
+        delete updated.reaction;
+      }
+      annotations[existingIndex] = updated;
+      views.forEach((view) => view?.addAnnotation(updated));
+      if (updated.global) {
+        views.forEach((view) => {
+          if (view) expandAllRenderedSections(view, updated);
+        });
+      }
+      setEditingAnnotation(updated);
+    } else {
+      const style = settings.globalReadSettings.highlightStyle;
+      const color = settings.globalReadSettings.highlightStyles[style];
+      const annotation: BookNote = {
+        id: uniqueId(),
+        type: 'annotation',
+        cfi,
+        style,
+        color,
+        text: selection.text,
+        note: '',
+        reaction: reaction ?? undefined,
+        page: progress.page,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      annotations.push(annotation);
+      views.forEach((view) => view?.addAnnotation(annotation));
+      setSelection({ ...selection, cfi, annotated: true });
+      setEditingAnnotation(annotation);
+    }
+
+    const updatedConfig = updateBooknotes(bookKey, annotations);
+    if (updatedConfig) {
+      saveConfig(envConfig, bookKey, updatedConfig, settings);
+    }
   };
 
   const handleCreateTTSHighlight = (event: CustomEvent) => {
@@ -1981,6 +2091,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             onToggleGlobal={handleToggleGlobal}
             onHighlight={handleHighlight}
             onDismiss={handleDismissPopupAndSelection}
+            reaction={editingAnnotation?.reaction}
+            onSelectReaction={handleSelectReaction}
           />
         )}
       {showProofreadPopup && trianglePosition && proofreadPopupPosition && selection && (

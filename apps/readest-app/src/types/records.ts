@@ -54,6 +54,7 @@ export interface DBBookNote {
   color?: string;
   note: string;
   global?: boolean;
+  reaction?: string;
 
   created_at?: string;
   updated_at?: string;
