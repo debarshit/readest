@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { BRAND_NAME } from '@/services/branding';
 import { MdMenuBook } from 'react-icons/md';
 import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -142,7 +143,10 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
           <>
             <p className='text-base-content/60 text-sm leading-relaxed'>
               {_(
-                'Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.',
+                _(
+                  'Paste the link to a web novel’s chapter list. {{brand}} downloads the chapters and saves them as a book.',
+                  { brand: BRAND_NAME },
+                ),
               )}
             </p>
             <input

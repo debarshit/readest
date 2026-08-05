@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { BRAND_NAME } from '@/services/branding';
 import { MdLink } from 'react-icons/md';
 import Dialog from '@/components/Dialog';
 import { isClipCancelled } from '@/services/send/clipSignIn';
@@ -73,7 +74,9 @@ const ImportFromUrlDialog: React.FC<ImportFromUrlDialogProps> = ({ isOpen, onClo
     >
       <div className='flex flex-col gap-4 pb-6 pt-2'>
         <p className='text-base-content/60 text-sm leading-relaxed'>
-          {_('Paste an article link. Readest clips the page and saves it to your library.')}
+          {_('Paste an article link. {{brand}} clips the page and saves it to your library.', {
+            brand: BRAND_NAME,
+          })}
         </p>
         <input
           type='url'
