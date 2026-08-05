@@ -18,6 +18,7 @@ import { buildAnnotationUrl } from '@/utils/deeplink';
 import { buildAnnotationCopyMarkdown } from '@/utils/note';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
+import { BRAND_NAME } from '@/services/branding';
 import {
   applyNoteBubbleTransition,
   decideNoteBubbleTransition,
@@ -114,7 +115,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     const url = buildAnnotationUrl({ bookHash, noteId: item.id, cfi: item.cfi }, linkType);
     const linkLabel = item.page
       ? _('Page: {{number}}', { number: item.page })
-      : _('Open in Readest');
+      : _('Open in {{brand}}', { brand: BRAND_NAME });
     const markdown = buildAnnotationCopyMarkdown({
       text: item.text,
       note: item.note,

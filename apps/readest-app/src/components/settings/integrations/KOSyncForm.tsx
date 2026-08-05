@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { BRAND_NAME } from '@/services/branding';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { md5 } from 'js-md5';
 import { type as osType } from '@tauri-apps/plugin-os';
@@ -54,7 +55,7 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
   }, [appService]);
 
   useEffect(() => {
-    const defaultName = osName ? `Readest (${osName})` : 'Readest';
+    const defaultName = osName ? `${BRAND_NAME} (${osName})` : BRAND_NAME;
     setDeviceName(settings.kosync.deviceName || defaultName);
   }, [settings.kosync.deviceName, osName]);
 
@@ -196,7 +197,7 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
                 <SettingLabel>{_('Device Name')}</SettingLabel>
                 <input
                   type='text'
-                  placeholder={osName ? `Readest (${osName})` : 'Readest'}
+                  placeholder={osName ? `${BRAND_NAME} (${osName})` : BRAND_NAME}
                   className='input h-9 max-w-[60%] rounded-md !border-0 !bg-transparent !pe-3 !ps-2 text-end text-sm hover:!bg-transparent focus:!border-0 focus:!bg-transparent focus:!shadow-none focus:!outline-none focus:!ring-0'
                   value={deviceName}
                   onChange={handleDeviceNameChange}
