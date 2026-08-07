@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { BRAND_NAME } from '@/services/branding';
+import { BRAND_NAME } from '@/services/branding';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MdChevronRight } from 'react-icons/md';
@@ -248,6 +249,8 @@ const IntegrationsPanel: React.FC = () => {
                 {_(
                   'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
                   { brand: BRAND_NAME },
+                  'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
+                  { brand: BRAND_NAME },
                 )}
               </li>
             </Tips>
@@ -277,6 +280,8 @@ const IntegrationsPanel: React.FC = () => {
               </li>
               <li>
                 {_(
+                  'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
+                  { brand: BRAND_NAME },
                   'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
                   { brand: BRAND_NAME },
                 )}
@@ -310,6 +315,8 @@ const IntegrationsPanel: React.FC = () => {
             {
               <li>
                 {_(
+                  'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
+                  { brand: BRAND_NAME },
                   'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
                   { brand: BRAND_NAME },
                 )}
@@ -397,6 +404,11 @@ const IntegrationsPanel: React.FC = () => {
       <div className='my-4 w-full'>
         <SubPageHeader
           parentLabel={_('Integrations')}
+          currentLabel={_('{{brand}} Cloud', { brand: BRAND_NAME })}
+          description={_(
+            'Sync your library, reading progress, and highlights with {{brand}} Cloud.',
+            { brand: BRAND_NAME },
+          )}
           currentLabel={_('{{brand}} Cloud', { brand: BRAND_NAME })}
           description={_(
             'Sync your library, reading progress, and highlights with {{brand}} Cloud.',
@@ -553,6 +565,9 @@ const IntegrationsPanel: React.FC = () => {
           {_('Connect {{brand}} to external services for sync, highlights, and catalogs.', {
             brand: BRAND_NAME,
           })}
+          {_('Connect {{brand}} to external services for sync, highlights, and catalogs.', {
+            brand: BRAND_NAME,
+          })}
         </p>
       </div>
 
@@ -604,6 +619,7 @@ const IntegrationsPanel: React.FC = () => {
               canToggle={!!user}
               onToggle={(next) => toggleCloudProvider('readest', next)}
               onOpen={() => (user ? setSubPage('readest-cloud') : navigateToLogin(router))}
+              toggleLabel={_('Sync with {{brand}} Cloud', { brand: BRAND_NAME })}
               toggleLabel={_('Sync with {{brand}} Cloud', { brand: BRAND_NAME })}
             />
             {/* Third-party providers are premium: every row carries the tier
@@ -718,6 +734,8 @@ const IntegrationsPanel: React.FC = () => {
                 {_(
                   'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
                   { brand: BRAND_NAME },
+                  'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
+                  { brand: BRAND_NAME },
                 )}
               </li>
             </Tips>
@@ -737,6 +755,7 @@ const IntegrationsPanel: React.FC = () => {
             />
             <IntegrationRow
               icon={RiSendPlaneLine}
+              title={_('Send to {{brand}}', { brand: BRAND_NAME })}
               title={_('Send to {{brand}}', { brand: BRAND_NAME })}
               status={_('Email books to your library')}
               onClick={() => setSubPage('send')}
