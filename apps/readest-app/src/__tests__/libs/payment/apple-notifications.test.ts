@@ -92,9 +92,9 @@ function createSupabaseMock(state: {
   return { client, captures };
 }
 
-const PLUS_PRODUCT = 'com.bilingify.readest.plus.monthly';
-const STORAGE_PRODUCT = 'com.bilingify.readest.purchase.storage.5gb';
-const BUNDLE_ID = 'com.bilingify.readest';
+const PLUS_PRODUCT = 'com.biblophile.readest.plus.monthly';
+const STORAGE_PRODUCT = 'com.biblophile.readest.purchase.storage.5gb';
+const BUNDLE_ID = 'com.biblophile.readest';
 const ORIGINAL_TX = 'orig-tx-1';
 
 const buildTransaction = (overrides: Record<string, unknown> = {}) => ({

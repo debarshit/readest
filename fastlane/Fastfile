@@ -81,7 +81,7 @@ end
 # existing App Store Connect values.
 PROMOTIONAL_TEXT = "Experience the Ultimate Ebook Reader Across All Your Devices for Avid Readers"
 
-# iOS and macOS are one App Store Connect app (com.bilingify.readest), built from
+# iOS and macOS are one App Store Connect app (com.biblophile.readest), built from
 # separate binaries and submitted independently. Each lane acts only on a build
 # already uploaded by altool (skip_binary_upload / distribute_only) — it never
 # builds or uploads a binary. For its platform it submits the build for App Store
@@ -93,7 +93,7 @@ def submit_apple_build(deliver_opts, testflight_opts)
   api_key = asc_api_key
   upload_to_app_store({
     api_key: api_key,
-    app_identifier: "com.bilingify.readest",
+    app_identifier: "com.biblophile.readest",
     skip_binary_upload: true, # use the altool-uploaded build; read version from the binary
     submit_for_review: true,
     automatic_release: true,
@@ -107,7 +107,7 @@ def submit_apple_build(deliver_opts, testflight_opts)
   }.merge(deliver_opts))
   upload_to_testflight({
     api_key: api_key,
-    app_identifier: "com.bilingify.readest",
+    app_identifier: "com.biblophile.readest",
     distribute_only: true,    # use the already-uploaded build; do not upload
     distribute_external: true,
     groups: ["Beta Testers"],
