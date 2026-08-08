@@ -888,7 +888,7 @@ export async function fetchBookDetails(
   let bookDoc: BookDoc | undefined;
   try {
     bookDoc = (await new DocumentLoader(file).open()).book;
-    return bookDoc.metadata;
+    return bookDoc?.metadata ?? ({} as BookDoc['metadata']);
   } finally {
     try {
       await bookDoc?.destroy?.();

@@ -224,7 +224,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       }
       const config = await appService.loadBookConfig(book, settings);
       // Import annotations from third-party readers on first open
-      if (bookDoc.metadata.identifier) {
+      if (bookDoc?.metadata?.identifier) {
         const { getAnnotationProviders } = await import('@/services/annotation');
         for (const provider of getAnnotationProviders()) {
           if (provider.isAvailable(appService)) {
@@ -243,7 +243,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       // Filter out invalid booknotes
       config.booknotes = config.booknotes?.filter((booknote) => booknote.cfi) ?? [];
       // Load cached book navigation (TOC + section fragments) or compute and persist.
-      if (book.format === 'EPUB' && bookDoc.rendition?.layout !== 'pre-paginated') {
+      if (book.format === 'EPUB' && bookDoc?.rendition?.layout !== 'pre-paginated') {
         const cachedNav = await appService.loadBookNav(book);
         if (isBookNavCacheCurrent(cachedNav) && process.env.NODE_ENV === 'production') {
           hydrateBookNav(bookDoc, cachedNav);
@@ -257,28 +257,34 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           }
         }
       }
-      await updateToc(
-        bookDoc,
-        config.viewSettings?.sortedTOC ?? false,
-        config.viewSettings?.convertChineseVariant ?? 'none',
-      );
-      if (!bookDoc.metadata.title && file) {
-        bookDoc.metadata.title = getBaseFilename(file.name);
+      if (bookDoc) {
+        await updateToc(
+          bookDoc,
+          config.viewSettings?.sortedTOC ?? false,
+          config.viewSettings?.convertChineseVariant ?? 'none',
+        );
       }
-      book.sourceTitle = formatTitle(bookDoc.metadata.title);
+      if (!bookDoc?.metadata?.title && file) {
+        if (bookDoc?.metadata) bookDoc.metadata.title = getBaseFilename(file.name);
+      }
+      if (bookDoc?.metadata?.title) {
+        book.sourceTitle = formatTitle(bookDoc.metadata.title);
+      }
       // Correct language codes mistakenly set with language names
-      if (typeof bookDoc.metadata?.language === 'string') {
+      if (typeof bookDoc?.metadata?.language === 'string') {
         if (bookDoc.metadata.language in SUPPORTED_LANGNAMES) {
           bookDoc.metadata.language = SUPPORTED_LANGNAMES[bookDoc.metadata.language]!;
         }
       }
       // Set the book's language for formerly imported books, newly imported books have this field set
-      const primaryLanguage = getPrimaryLanguage(bookDoc.metadata.language);
+      const primaryLanguage = getPrimaryLanguage(bookDoc?.metadata?.language);
       book.primaryLanguage = book.primaryLanguage ?? primaryLanguage;
-      book.metadata = book.metadata ?? bookDoc.metadata;
+      if (bookDoc?.metadata) {
+        book.metadata = book.metadata ?? bookDoc.metadata;
+      }
 
       // Update series info from metadata if available and not already set on the book
-      if (bookDoc.metadata.belongsTo?.series) {
+      if (bookDoc?.metadata?.belongsTo?.series && book.metadata) {
         const belongsTo = bookDoc.metadata.belongsTo.series;
         const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
         if (series) {
@@ -293,7 +299,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       // book.metaHash = book.metaHash ?? getMetadataHash(bookDoc.metadata);
       // PDF metaHash is salted with the original import filename (issue #5411),
       // which is lost after import — keep the value stamped at import time.
-      if (book.format !== 'PDF' || !book.metaHash) {
+      if (bookDoc?.metadata && (book.format !== 'PDF' || !book.metaHash)) {
         book.metaHash = getMetadataHash(bookDoc.metadata);
       }
 

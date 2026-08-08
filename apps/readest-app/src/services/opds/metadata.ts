@@ -40,10 +40,10 @@ const subjectNames = (value: string | OPDSSubject | Array<string | OPDSSubject> 
  * Only fields the feed actually provides are emitted — blanks and empty lists
  * are "not provided", never overrides.
  */
-export const getOPDSBookMetadata = (publication: {
+export const getOPDSBookMetadata = (publication?: {
   metadata?: OPDSPublication['metadata'];
 }): OPDSBookMetadata => {
-  const meta = publication.metadata;
+  const meta = publication?.metadata;
   if (!meta) return {};
   const result: OPDSBookMetadata = {};
 

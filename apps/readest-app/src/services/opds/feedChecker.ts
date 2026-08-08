@@ -154,15 +154,12 @@ export function getAcquisitionLink(pub: OPDSPublication): ValidAcqLink | undefin
  * Primary: Atom <id>. Fallback: resolved acquisition URL.
  */
 export function getEntryId(pub: OPDSPublication, baseURL: string): string | undefined {
-  if (pub.metadata.id) return pub.metadata.id;
+  if (pub.metadata?.id) return pub.metadata.id;
   const acqLink = getAcquisitionLink(pub);
   if (acqLink) return resolveURL(acqLink.href, baseURL);
   return undefined;
 }
 
-/**
- * Extract the rel=next pagination URL from a feed.
- */
 export function getNextPageUrl(feed: OPDSFeed): string | undefined {
   const nextLink = feed.links?.find((link) => {
     const rels = Array.isArray(link.rel) ? link.rel : [link.rel ?? ''];
@@ -172,9 +169,7 @@ export function getNextPageUrl(feed: OPDSFeed): string | undefined {
 }
 
 /**
- * Collect new PendingItems from a feed, skipping entries already in knownIds
- * and de-duplicating entries that appear multiple times within the same feed
- * (e.g. listed under both feed.publications and a group).
+ * Filter an OPDS feed for entries not yet in knownIds.
  */
 export function collectNewEntries(
   feed: OPDSFeed,
@@ -201,12 +196,12 @@ export function collectNewEntries(
     const metadata = getOPDSBookMetadata(pub);
     items.push({
       entryId,
-      title: pub.metadata.title || acqLink.title || 'Untitled',
+      title: pub.metadata?.title || acqLink.title || 'Untitled',
       acquisitionHref: acqLink.href,
       coverHref: getOPDSCoverHref(pub),
       metadata: Object.keys(metadata).length ? metadata : undefined,
       mimeType: acqLink.type ?? 'application/octet-stream',
-      updated: pub.metadata.updated,
+      updated: pub.metadata?.updated,
       baseURL,
     });
   }

@@ -83,8 +83,7 @@ export const AboutWindow = () => {
     setUpdateStatus(null);
   };
 
-  // const versionInfo = `${_('Version {{version}}', { version: getAppVersion() })} (${browserInfo})`;
-  const versionInfo = '0.0.0';
+  const versionInfo = `${_('Version {{version}}', { version: getAppVersion() })} (${browserInfo})`;
 
   // Mobile users can't select the version string to paste it into a bug
   // report, so the label itself copies it.
@@ -153,18 +152,16 @@ export const AboutWindow = () => {
             <p className='text-neutral-content text-sm'>
               © {new Date().getFullYear()} Biblophile. All rights reserved.
             </p>
-            {/* <p className='text-neutral-content text-xs'>
+            <p className='text-neutral-content text-xs'>
               Source code is available at{' '}
               <Link href='https://github.com/debarshit/readest' className='text-blue-500 underline'>
                 GitHub
               </Link>
               .
-            </p> */}
-            {/* <LegalLinks /> */}
-            TOC, Privacy, etc etc
+            </p>
+            <LegalLinks />
           </div>
-          {/* <SupportLinks /> */}
-          insta, threads, reddit, etc
+          <SupportLinks />
         </div>
       )}
     </Dialog>

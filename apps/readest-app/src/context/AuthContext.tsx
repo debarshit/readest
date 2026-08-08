@@ -17,6 +17,10 @@ export interface User {
   user_metadata?: {
     full_name?: string;
     name?: string;
+    profilePic?: string;
+    avatar_url?: string;
+    picture?: string;
+    [key: string]: any;
   };
 }
 

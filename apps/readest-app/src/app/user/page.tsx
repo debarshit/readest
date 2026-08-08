@@ -288,12 +288,14 @@ const ProfilePage = () => {
     );
   }
 
-  const avatarUrl = user?.user_metadata?.['profilePic'] || user?.user_metadata?.['avatar_url'];
+  const avatarUrl =
+    user?.user_metadata?.['profilePic'] ||
+    user?.user_metadata?.['avatar_url'] ||
+    user?.user_metadata?.['picture'];
   const userFullName = user?.user_metadata?.['full_name'] || '-';
   const userEmail = user?.email || '';
-  // const userPlanDetails =
-  //   getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
-  const userPlanDetails = '';
+  const userPlanDetails =
+    getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
 
   return (
     <div
@@ -335,9 +337,9 @@ const ProfilePage = () => {
                     planDetails={userPlanDetails}
                   />
 
-                  {/* {!showStorageManager && !showSharedLinksManager && !showSyncManager && (
+                  {!showStorageManager && !showSharedLinksManager && !showSyncManager && (
                     <UsageStats quotas={quotas} />
-                  )} */}
+                  )}
                 </div>
                 {showStorageManager ? (
                   <div className='flex flex-col gap-y-8 px-6'>
@@ -354,17 +356,17 @@ const ProfilePage = () => {
                   </div>
                 ) : (
                   <>
-                    {/* <div className='flex flex-col gap-y-8 sm:px-6'>
+                    <div className='flex flex-col gap-y-8 sm:px-6'>
                       <PlansComparison
                         availablePlans={availablePlans}
                         userPlan={userProfilePlan}
                         onSubscribe={
-                          appService.hasIAP && iapAvailable
+                          appService?.hasIAP && iapAvailable
                             ? handleIAPSubscribe
                             : handleStripeSubscribe
                         }
                       />
-                    </div> */}
+                    </div>
                     <div className='flex flex-col gap-y-8 px-6'>
                       <AccountActions
                         userPlan={userProfilePlan}
@@ -383,8 +385,7 @@ const ProfilePage = () => {
                     </div>
                   </>
                 )}
-                {/* <LegalLinks /> */}
-                TOC, privacy, source-code
+                <LegalLinks />
               </div>
             </div>
           )}

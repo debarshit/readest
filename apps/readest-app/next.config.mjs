@@ -41,9 +41,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   devIndicators: false,
   experimental: {
     // Dev caching is on by default since Next 16.1. We deliberately do NOT
