@@ -31,10 +31,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
 import { navigateToLogin } from '@/utils/nav';
 import { getScrollGapAttr } from '@/utils/webtoon';
+import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
 import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
 import { nextThemeMode } from '@/utils/ambientLight';
 import dayjs from 'dayjs';
+import { clampSyncTimeForDisplay } from '@/utils/time';
 import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
 import MenuItem from '@/components/MenuItem';
@@ -161,6 +163,13 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
       `${getMaxInlineSize(viewSettings)}px`,
     );
     getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
+    // `scrolled` decides which engine owns a swipe: leaving it stale keeps the
+    // paginator's `turn-style` / cleared `no-swipe` from scroll flow, so the
+    // paginator animates the swipe itself while the touch interceptor — which
+    // recomputes eligibility live — runs a captured turn over the top, and
+    // three pages slide at once.
+    const view = getView(bookKey);
+    if (view) applyPageTurnAttributes(view, viewSettings!, !!bookData?.isFixedLayout);
     setViewSettings(bookKey, viewSettings!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScrolledMode]);
@@ -465,7 +474,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
             ? _('Sign in to Sync')
             : lastSyncTime
               ? _('Synced {{time}}', {
-                  time: dayjs(lastSyncTime).fromNow(),
+                  time: dayjs(clampSyncTimeForDisplay(lastSyncTime)).fromNow(),
                 })
               : _('Never synced')
         }

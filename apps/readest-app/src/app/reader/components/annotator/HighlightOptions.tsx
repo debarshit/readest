@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
-import { FaCheckCircle } from 'react-icons/fa';
+import { FaCheck } from 'react-icons/fa';
 import { MdLibraryAddCheck } from 'react-icons/md';
 import { DEFAULT_HIGHLIGHT_COLORS, HighlightColor, HighlightStyle } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
@@ -10,7 +10,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useDragScroll } from '@/hooks/useDragScroll';
 import { saveSysSettings } from '@/helpers/settings';
-import { HIGHLIGHT_COLOR_HEX, LONG_HOLD_THRESHOLD } from '@/services/constants';
+import { LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { getHighlightColorLabel } from '../../utils/annotatorUtil';
 import { stubTranslation as _ } from '@/utils/misc';
 
@@ -75,6 +75,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressTapRef = useRef(false);
   const colorStripRef = useRef<HTMLDivElement | null>(null);
+  const size10 = useResponsiveSize(10);
   const size16 = useResponsiveSize(16);
   const size24 = useResponsiveSize(24);
   const size30 = useResponsiveSize(30);
@@ -156,6 +157,18 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     };
   }, []);
 
+  /**
+   * The color a style would be drawn in, resolved to a hex the same way the
+   * color strip resolves its dots. The selected style's live color lives in
+   * local state -- the store lags a tick behind the tap -- so read that first
+   * and fall back to the style's stored binding.
+   */
+  const resolveStyleColor = (style: HighlightStyle): string => {
+    const color =
+      selectedStyle === style ? selectedColor : globalReadSettings.highlightStyles[style];
+    return customColors[color] || color;
+  };
+
   const handleSelectStyle = (style: HighlightStyle) => {
     const newGlobalReadSettings = { ...globalReadSettings, highlightStyle: style };
     saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
@@ -228,14 +241,22 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 style={{
                   width: size16,
                   height: size16,
+                  // The marker swatch is a block of the highlighter color, so its
+                  // glyph needs a fixed dark ink -- base-content would be white on
+                  // a light marker in dark themes. The highlight palette is all
+                  // light tones, so dark ink stays legible on every color. B&W
+                  // e-ink has no color to show.
                   ...(style === 'highlight' && {
-                    backgroundColor: isBwEink ? einkFgColor : HIGHLIGHT_COLOR_HEX['yellow'],
+                    backgroundColor: isBwEink ? einkFgColor : resolveStyleColor(style),
                     color: isBwEink ? einkBgColor : '#1f2937',
                   }),
+                  // Only the rule carries the color, like the overlayer, which
+                  // strokes the line in the annotation color over untouched text.
                   ...((style === 'underline' || style === 'squiggly') && {
                     textDecoration: 'underline',
                     textDecorationThickness: '2px',
-                    textUnderlineOffset: style === 'squiggly' ? '1px' : '3px',
+                    textUnderlineOffset: style === 'squiggly' ? '2px' : '2px',
+                    textDecorationColor: isBwEink ? einkFgColor : resolveStyleColor(style),
                   }),
                   ...(style === 'squiggly' && { textDecorationStyle: 'wavy' }),
                 }}
@@ -246,6 +267,9 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 )}
               >
                 {style === 'highlight' ? (
+                  // text-box trims the em box to cap height / baseline so the
+                  // flex centering centers the glyph ink, not the em box (which
+                  // has empty descender space below a capital A).
                   <span style={{ textBox: 'trim-both cap alphabetic' }}>A</span>
                 ) : (
                   'A'
@@ -319,14 +343,15 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                     style={{
                       width: size16,
                       height: size16,
-                      backgroundColor: selectedColor !== color ? swatchColor : 'transparent',
+                      backgroundColor: isBwEink ? einkFgColor : swatchColor,
                     }}
-                    className='rounded-full p-0'
+                    className='flex items-center justify-center rounded-full p-0'
                   >
                     {selectedColor === color && (
-                      <FaCheckCircle
-                        size={size16}
-                        style={{ fill: isBwEink ? einkFgColor : swatchColor }}
+                      <FaCheck
+                        size={size10}
+                        className='text-base-content'
+                        style={isBwEink ? { color: einkBgColor } : undefined}
                       />
                     )}
                   </button>

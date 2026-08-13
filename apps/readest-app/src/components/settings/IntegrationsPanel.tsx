@@ -11,6 +11,7 @@ import {
   RiBook3Line,
   RiDiscordLine,
   RiSendPlaneLine,
+  RiWifiLine,
   RiCloudLine,
   RiCloudFill,
   RiDatabase2Line,
@@ -29,7 +30,8 @@ import { useFileSyncStore } from '@/store/fileSyncStore';
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
 import { isCloudSyncAllowed } from '@/utils/access';
-import { isWebAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
+import { isLocalSendEnabled } from '@/services/localsend/devicePrefs';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { isICloudSupportedPlatform } from '@/services/sync/providers/icloud/buildICloudProvider';
@@ -40,6 +42,7 @@ import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
+import LocalSendForm from './integrations/LocalSendForm';
 import WebDAVForm from './integrations/WebDAVForm';
 import GoogleDriveForm from './integrations/GoogleDriveForm';
 import OneDriveForm from './integrations/OneDriveForm';
@@ -76,6 +79,7 @@ type SubPage =
   | 'hardcover'
   | 'opds'
   | 'send'
+  | 'localsend'
   | null;
 
 /**
@@ -198,7 +202,8 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
       requestedSubPage === 'opds' ||
-      requestedSubPage === 'send'
+      requestedSubPage === 'send' ||
+      requestedSubPage === 'localsend'
     ) {
       setSubPage(requestedSubPage);
     } else if (requestedSubPage === 'cloudsync') {
@@ -216,6 +221,12 @@ const IntegrationsPanel: React.FC = () => {
     return (
       <div className='my-4 w-full'>
         <KOSyncForm onBack={() => setSubPage(null)} />
+      </div>
+    );
+  if (subPage === 'localsend')
+    return (
+      <div className='my-4 w-full'>
+        <LocalSendForm onBack={() => setSubPage(null)} />
       </div>
     );
   if (subPage === 'bookorbit')
@@ -741,6 +752,14 @@ const IntegrationsPanel: React.FC = () => {
               status={_('Email books to your library')}
               onClick={() => setSubPage('send')}
             />
+            {isTauriAppPlatform() && (
+              <IntegrationRow
+                icon={RiWifiLine}
+                title={_('LocalSend')}
+                status={isLocalSendEnabled() ? _('On') : _('Off')}
+                onClick={() => setSubPage('localsend')}
+              />
+            )}
           </div>
         </div>
       </div>
