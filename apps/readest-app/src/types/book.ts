@@ -115,6 +115,12 @@ export interface Book {
   createdAt: number;
   updatedAt: number;
   deletedAt?: number | null;
+  /**
+   * Positive authorization to delete this book's directory from third-party
+   * file-sync providers. Must equal the current `deletedAt` tombstone; a plain
+   * tombstone hides the library row but preserves provider bytes (#5695).
+   */
+  fileSyncDeletionRequestedAt?: number | null;
 
   uploadedAt?: number | null;
   downloadedAt?: number | null;
@@ -228,6 +234,10 @@ export interface BookLayout {
   hideScrollbar: boolean;
   /* Auto Scroll (#4998) speed as a percentage; 100 = AUTO_SCROLL_BASE_PX_PER_SEC. */
   autoScrollSpeed: number;
+  /* True when a session was still running as the book was closed, so reopening
+     the book resumes it (#5631). Per book: written with the global write
+     skipped, and cleared by any explicit stop. */
+  autoScrollRunning: boolean;
 }
 
 export interface BookStyle {
@@ -555,6 +565,12 @@ export interface BookConfig {
   rsvpPosition?: { cfi: string; wordText: string };
   searchConfig?: Partial<BookSearchConfig>;
   viewSettings?: Partial<ViewSettings>;
+  /**
+   * A device-local recording paired with this ebook. The audio files live
+   * under Books/<hash>/audiobook/ and are deliberately excluded from cloud
+   * sync; ordinary reading progress remains the shared cross-device state.
+   */
+  audiobook?: PairedAudiobook;
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
@@ -563,6 +579,36 @@ export interface BookConfig {
   foliateImportedAt?: number;
 
   updatedAt: number;
+}
+
+export interface AudiobookFile {
+  id: string;
+  name: string;
+  path: string;
+  duration: number;
+}
+
+export interface AudiobookChapter {
+  id: string;
+  fileId: string;
+  label: string;
+  start: number;
+  end: number;
+}
+
+export interface AudiobookChapterMapping {
+  ebookChapterId: string;
+  audioChapterId: string;
+}
+
+export interface PairedAudiobook {
+  version: 1;
+  title?: string;
+  narrator?: string;
+  files: AudiobookFile[];
+  chapters: AudiobookChapter[];
+  mappings: AudiobookChapterMapping[];
+  createdAt: number;
 }
 
 export interface BookDataRecord {

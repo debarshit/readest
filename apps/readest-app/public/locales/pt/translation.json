@@ -1621,7 +1621,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} dicionários não são suportados e estão desativados",
   "No new dictionaries were imported": "Nenhum dicionário novo foi importado",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Lê os livros a partir das pastas originais em vez de os copiar para a biblioteca. Poupa espaço em disco; o envio automático para a nuvem continua a funcionar se estiver ativado.",
-  "This folder is an external library. Books here are always read in place.": "Esta pasta é uma biblioteca externa. Os livros aqui são sempre lidos no local original.",
   "Swipe to Paginate": "Deslizar para Mudar de Página",
   "Share anonymous usage data so we can understand how {{brand}} is used and make it better.": "Partilhe dados de utilização anónimos para podermos perceber como o {{brand}} é utilizado e melhorá-lo.",
   "Anonymous, aggregated feature usage": "Utilização de funcionalidades anónima e agregada",
@@ -2150,5 +2149,14 @@
   "On": "Ativado",
   "Not available for this book.": "Não disponível para este livro.",
   "Start of Book": "Início do livro",
-  "End of Book": "Fim do livro"
+  "End of Book": "Fim do livro",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Esta pasta é uma biblioteca externa. Desmarque para deixar de ler os livros no local original; as próximas importações copiarão os livros para a biblioteca.",
+  "More Settings": "Mais configurações",
+  "Right-to-Left Pages": "Páginas da direita para a esquerda",
+  "Send Document Metadata": "Enviar metadados do documento",
+  "Hide covers": "Ocultar capas de livros",
+  "Auto-download from “{{name}}”?": "Baixar automaticamente de “{{name}}”?",
+  "Stop auto-downloading from “{{name}}”?": "Parar de baixar automaticamente de “{{name}}”?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "O Readest baixará automaticamente cada nova publicação deste catálogo quando o aplicativo sincronizar. Isso pode baixar um grande número de livros.",
+  "New publications from this catalog will no longer be downloaded automatically.": "As novas publicações deste catálogo não serão mais baixadas automaticamente."
 }

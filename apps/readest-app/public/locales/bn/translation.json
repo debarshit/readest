@@ -1590,7 +1590,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}}টি অভিধান অসমর্থিত এবং নিষ্ক্রিয়",
   "No new dictionaries were imported": "কোনো নতুন অভিধান আমদানি করা হয়নি",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "বইগুলিকে লাইব্রেরিতে অনুলিপি করার পরিবর্তে তাদের মূল ফোল্ডার থেকে পড়ুন। ডিস্ক স্পেস সঞ্চয় করে; সক্ষম থাকলে ক্লাউড স্বয়ংক্রিয়-আপলোড এখনও কাজ করে।",
-  "This folder is an external library. Books here are always read in place.": "এই ফোল্ডারটি একটি বহিরাগত লাইব্রেরি। এখানে বইগুলি সর্বদা মূল স্থানে পড়া হয়।",
   "Swipe to Paginate": "পৃষ্ঠা পরিবর্তনে সোয়াইপ করুন",
   "Share anonymous usage data so we can understand how {{brand}} is used and make it better.": "বেনামি ব্যবহারের ডেটা শেয়ার করুন যাতে আমরা বুঝতে পারি {{brand}} কীভাবে ব্যবহৃত হয় এবং এটি উন্নত করতে পারি।",
   "Anonymous, aggregated feature usage": "বেনামি, সমষ্টিগত ফিচার ব্যবহার",
@@ -2094,5 +2093,14 @@
   "On": "চালু",
   "Not available for this book.": "এই বইয়ের জন্য উপলব্ধ নয়।",
   "Start of Book": "বইয়ের শুরু",
-  "End of Book": "বইয়ের শেষ"
+  "End of Book": "বইয়ের শেষ",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "এই ফোল্ডারটি একটি বাহ্যিক লাইব্রেরি। এর বইগুলি নিজ স্থানে পড়া বন্ধ করতে টিক তুলে দিন; পরবর্তী ইমপোর্টে বইগুলি লাইব্রেরিতে কপি করা হবে।",
+  "More Settings": "আরও সেটিংস",
+  "Right-to-Left Pages": "ডান থেকে বামে পৃষ্ঠা",
+  "Send Document Metadata": "নথির মেটাডেটা পাঠান",
+  "Hide covers": "বইয়ের মলাট লুকান",
+  "Auto-download from “{{name}}”?": "“{{name}}” থেকে স্বয়ংক্রিয়ভাবে ডাউনলোড করবেন?",
+  "Stop auto-downloading from “{{name}}”?": "“{{name}}” থেকে স্বয়ংক্রিয় ডাউনলোড বন্ধ করবেন?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "অ্যাপ সিঙ্ক হওয়ার সময় Readest এই ক্যাটালগের প্রতিটি নতুন প্রকাশনা স্বয়ংক্রিয়ভাবে ডাউনলোড করবে। এতে প্রচুর সংখ্যক বই ডাউনলোড হতে পারে।",
+  "New publications from this catalog will no longer be downloaded automatically.": "এই ক্যাটালগের নতুন প্রকাশনা আর স্বয়ংক্রিয়ভাবে ডাউনলোড করা হবে না।"
 }

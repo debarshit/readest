@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useAndroidGamepadConnection } from '@/hooks/useAndroidGamepadConnection';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SystemSettings } from '@/types/settings';
@@ -42,6 +43,7 @@ import Notebook from './notebook/Notebook';
 import LocalSendManager from '@/components/localsend/LocalSendManager';
 import BooksGrid from './BooksGrid';
 import SettingsDialog from '@/components/settings/SettingsDialog';
+import AudiobookPairingDialog from './audiobook/AudiobookPairingDialog';
 
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const _ = useTranslation();
@@ -56,6 +58,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { initViewState, getViewState, clearViewState } = useReaderStore();
   const { isSettingsDialogOpen, settingsDialogBookKey } = useSettingsStore();
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
+  const [audiobookBookKey, setAudiobookBookKey] = useState<string | null>(null);
   const [shareDialogState, setShareDialogState] = useState<{
     book: Book;
     cfi: string | null;
@@ -66,7 +69,13 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const [errorLoading, setErrorLoading] = useState(false);
 
   useBookShortcuts({ sideBarBookKey, bookKeys });
-  useGamepad();
+  const isAndroidApp = appService?.isAndroidApp === true;
+  const androidGamepadConnected = useAndroidGamepadConnection(isAndroidApp);
+  // Android's native bridge gates the Web Gamepad API so Chromium polls only
+  // while a controller exists. Other platforms retain the existing behavior.
+  useGamepad({
+    enabled: appService !== null && (!isAndroidApp || androidGamepadConnected),
+  });
 
   useEffect(() => {
     if (isInitiating.current) return;
@@ -101,6 +110,15 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const handleManageAudiobook = (event: CustomEvent) => {
+      const detail = event.detail as { bookKey?: string } | undefined;
+      if (detail?.bookKey) setAudiobookBookKey(detail.bookKey);
+    };
+    eventDispatcher.on('manage-audiobook', handleManageAudiobook);
+    return () => eventDispatcher.off('manage-audiobook', handleManageAudiobook);
   }, []);
 
   useEffect(() => {
@@ -335,6 +353,13 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
         onGoToLibrary={handleCloseBooksToLibrary}
       />
       {isSettingsDialogOpen && <SettingsDialog bookKey={settingsDialogBookKey} />}
+      {audiobookBookKey && getBookData(audiobookBookKey)?.bookDoc && (
+        <AudiobookPairingDialog
+          bookKey={audiobookBookKey}
+          bookDoc={getBookData(audiobookBookKey)!.bookDoc!}
+          onClose={() => setAudiobookBookKey(null)}
+        />
+      )}
       <Notebook />
       <LocalSendManager />
       {showDetailsBook && (

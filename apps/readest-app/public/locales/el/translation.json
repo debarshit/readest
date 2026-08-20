@@ -1590,7 +1590,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} λεξικά δεν υποστηρίζονται και είναι απενεργοποιημένα",
   "No new dictionaries were imported": "Δεν εισήχθησαν νέα λεξικά",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Διαβάστε βιβλία από τους αρχικούς τους φακέλους αντί να τα αντιγράφετε στη βιβλιοθήκη. Εξοικονομεί χώρο στο δίσκο· η αυτόματη μεταφόρτωση στο cloud εξακολουθεί να λειτουργεί εάν είναι ενεργοποιημένη.",
-  "This folder is an external library. Books here are always read in place.": "Αυτός ο φάκελος είναι εξωτερική βιβλιοθήκη. Τα βιβλία εδώ διαβάζονται πάντα στη θέση τους.",
   "Swipe to Paginate": "Σύρετε για Σελιδοποίηση",
   "Share anonymous usage data so we can understand how {{brand}} is used and make it better.": "Μοιραστείτε ανώνυμα δεδομένα χρήσης για να καταλάβουμε πώς χρησιμοποιείται το {{brand}} και να το βελτιώσουμε.",
   "Anonymous, aggregated feature usage": "Ανώνυμη, συγκεντρωτική χρήση λειτουργιών",
@@ -2094,5 +2093,14 @@
   "On": "Ενεργό",
   "Not available for this book.": "Μη διαθέσιμο για αυτό το βιβλίο.",
   "Start of Book": "Αρχή βιβλίου",
-  "End of Book": "Τέλος βιβλίου"
+  "End of Book": "Τέλος βιβλίου",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Αυτός ο φάκελος είναι εξωτερική βιβλιοθήκη. Καταργήστε την επιλογή για να σταματήσει η επιτόπια ανάγνωση των βιβλίων του· οι μελλοντικές εισαγωγές θα αντιγράφουν τα βιβλία στη βιβλιοθήκη.",
+  "More Settings": "Περισσότερες ρυθμίσεις",
+  "Right-to-Left Pages": "Σελίδες από δεξιά προς τα αριστερά",
+  "Send Document Metadata": "Αποστολή μεταδεδομένων εγγράφου",
+  "Hide covers": "Απόκρυψη εξωφύλλων βιβλίων",
+  "Auto-download from “{{name}}”?": "Αυτόματη λήψη από το “{{name}}”;",
+  "Stop auto-downloading from “{{name}}”?": "Διακοπή αυτόματης λήψης από το “{{name}}”;",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Το Readest θα κατεβάζει αυτόματα κάθε νέα δημοσίευση αυτού του καταλόγου κατά τον συγχρονισμό της εφαρμογής. Ενδέχεται να ληφθεί μεγάλος αριθμός βιβλίων.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Οι νέες δημοσιεύσεις αυτού του καταλόγου δεν θα λαμβάνονται πλέον αυτόματα."
 }

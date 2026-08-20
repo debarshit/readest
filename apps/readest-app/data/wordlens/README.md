@@ -31,6 +31,12 @@ for p in es-en fr-en de-en pt-en it-en ru-en en-es en-fr en-de en-pt en-ru; do c
 
 # Source-language lemmatization lists (michmech) — used to lemmatize X→en source words
 for c in es fr de pt it ru; do curl -sL -o lemmatization-$c.txt https://raw.githubusercontent.com/michmech/lemmatization-lists/master/lemmatization-$c.txt; done
+
+# en→vi and en→hu: WikDict publishes neither Vietnamese nor Hungarian, so the glosses come
+# from the kaikki English Wiktionary extract (CC-BY-SA-4.0) — ~3.2 GB, streamed line-by-line
+# by the build. One download serves every kaikki-sourced pair; use aria2c, not curl: kaikki
+# throttles a single connection to ~270 KB/s (6h), while 16 parallel ranges finish in ~20 min.
+aria2c -x16 -s16 -o kaikki-en.jsonl https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl
 ```
 
 ## 2. Generate packs (run from `apps/readest-app`)
@@ -71,7 +77,19 @@ done
 for tgt in es fr de pt ru; do
   node scripts/build-wordlens-data.mjs build-wikdict en "$tgt" /tmp/ww-data/en_50k.txt "/tmp/ww-data/en-$tgt.sqlite3" 20000
 done
+
+# en→vi, en→hu: no WikDict dictionary exists, so use the kaikki `build` mode instead — it
+# reads the target-language `translations` off each English Wiktionary entry. Same
+# lemmatization (en-en table) and same output shape as the WikDict pairs.
+for tgt in vi hu; do
+  node scripts/build-wordlens-data.mjs build en "$tgt" /tmp/ww-data/en_50k.txt /tmp/ww-data/kaikki-en.jsonl 20000
+done
 ```
+> **vi and hu are en-target only.** Vietnamese words are multi-syllable with spaces *inside*
+> the word ("học sinh"), so the planner's whitespace tokenizer would gloss syllables, not
+> words. Hungarian is agglutinative, so its surface forms ("házaimban") need a lemmatizer,
+> and michmech publishes no Hungarian list. Both need that missing piece before a `vi-en` or
+> `hu-en` pack would gloss anything useful — deferred, like ja/ko/th.
 - Each build writes `data/wordlens/<pair>.json` **and** regenerates `manifest.json`
   (sha256 + bytes + entry count). Rebuild only the manifest with `pnpm wordlens:manifest`.
 - The last CLI arg is `topN` (default 30000 for en-zh, 20000 otherwise).
@@ -84,9 +102,15 @@ done
 
 ## 3. Sync to R2
 ```bash
-WORDLENS_R2_BUCKET=<cdn-bucket> pnpm wordlens:sync
+WORDLENS_R2_BUCKET=<cdn-bucket> pnpm wordlens:sync           # only what changed
+WORDLENS_R2_BUCKET=<cdn-bucket> pnpm wordlens:sync --force   # re-upload every pack
 ```
-Uploads every pack (immutable cache) + `manifest.json` (5-min cache), manifest last.
+**Incremental:** the sync fetches the manifest already on the CDN and compares each
+pack's `sha256`, so a one-pair refresh uploads that one pack, not all ~20 MB. Packs go
+up first (immutable cache), `manifest.json` LAST (5-min cache) — and it is skipped
+entirely if any pack failed, so the published manifest never references a pack the
+bucket is missing. Use `--force` when the remote manifest is fine but an object was
+deleted from the bucket; an unreachable manifest (first sync) falls back to a full upload.
 
 ## 4. Commit
 ```bash

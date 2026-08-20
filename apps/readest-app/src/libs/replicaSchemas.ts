@@ -62,6 +62,7 @@ const opdsCatalogFieldsSchema = z
     autoDownload: fieldEnvelopeSchema.optional(),
     disabled: fieldEnvelopeSchema.optional(),
     addedAt: fieldEnvelopeSchema.optional(),
+    sortOrder: fieldEnvelopeSchema.optional(),
     // Encrypted-credential fields. The CRDT envelope wraps a cipher
     // envelope as `v` when the publishing device had its CryptoSession
     // unlocked; otherwise the field is omitted from the row.
@@ -163,6 +164,10 @@ const manifestFileSchema = z.object({
   filename: z.string(),
   byteSize: z.number().int().nonnegative(),
   partialMd5: z.string(),
+  sha256: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/u)
+    .optional(),
   mtime: z.number().optional(),
 });
 

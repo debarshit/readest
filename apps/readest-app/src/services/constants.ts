@@ -77,6 +77,7 @@ export const DEFAULT_KOSYNC_SETTINGS = {
   deviceName: '',
   checksumMethod: 'binary',
   strategy: 'prompt',
+  sendMetadata: false,
   enabled: false,
 } as KOSyncSettings;
 
@@ -207,6 +208,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryAutoColumns: true,
   libraryColumns: 6,
   librarySkeuomorphicCovers: false,
+  libraryHideCovers: false,
   libraryRecentShelfEnabled: false,
 
   metadataSeriesCollapsed: false,
@@ -343,6 +345,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   allowScript: false,
   hideScrollbar: false,
   autoScrollSpeed: 100,
+  autoScrollRunning: false,
 };
 
 export const DEFAULT_BOOK_LANGUAGE: BookLanguage = {
@@ -1053,6 +1056,7 @@ export const TRANSLATED_LANGS = {
   ro: 'Română',
   hu: 'Magyar',
   uz: 'Oʻzbek',
+  ka: 'ქართული',
 };
 
 export const TRANSLATOR_LANGS: Record<string, string> = {
