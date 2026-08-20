@@ -9,6 +9,7 @@ import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 
 import { Book, BooksGroup, type LibrarySearchConfig } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
+import { ArcService, type AppliedArc } from '@/services/arcService';
 import {
   buildBookLookupIndex,
   collectKnownSourcePaths,
@@ -283,6 +284,72 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const librarySearchConfigRef = useRef(librarySearchConfig);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const [failedImportsModal, setFailedImportsModal] = useState<FailedImport[] | null>(null);
+  const [activeTab, setActiveTab] = useState<'library' | 'arcs'>('library');
+  const [appliedArcs, setAppliedArcs] = useState<AppliedArc[]>([]);
+
+  useEffect(() => {
+    if (token) {
+      ArcService.getAppliedArcs().then(setAppliedArcs).catch(console.error);
+    } else {
+      setAppliedArcs([]);
+    }
+  }, [token]);
+
+  const arcBooks = React.useMemo(() => {
+    const now = new Date();
+    return appliedArcs
+      .filter((arc) => {
+        if (arc.status !== 'approved') return false;
+        if (!arc.reviewDueDate) return true;
+        // Parse "YYYY-MM-DD HH:MM:SS" formatted date
+        const parsedDate = new Date(arc.reviewDueDate.replace(' ', 'T'));
+        return isNaN(parsedDate.getTime()) || parsedDate > now;
+      })
+      .map((arc): Book => {
+        const base = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'http://localhost:3001/api/v0';
+        const isWeb = isWebAppPlatform();
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const readUrl = isWeb
+          ? `${origin}/api/marketing/arcs/${arc.campaignId}/read?token=${token}`
+          : `${base}/marketing/arcs/${arc.campaignId}/read?token=${token}`;
+
+        return {
+          hash: `arc_${arc.campaignId}`,
+          title: arc.bookName || arc.title || 'Untitled ARC',
+          author: 'Advance Review Copy',
+          format: (arc.format?.toUpperCase() || 'EPUB') as any,
+          url: readUrl,
+          coverImageUrl: arc.bookPhoto || null,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          readingStatus: arc.reviewStatus === 'submitted' ? 'finished' : 'unread',
+        };
+      });
+  }, [appliedArcs, token]);
+
+  useEffect(() => {
+    if (arcBooks.length === 0) return;
+
+    const nonArcBooks = libraryBooks.filter((b) => !b.hash.startsWith('arc_'));
+    const updatedLibrary = [...nonArcBooks, ...arcBooks];
+
+    const hasChanged =
+      libraryBooks.length !== updatedLibrary.length ||
+      arcBooks.some((ab) => {
+        const existing = libraryBooks.find((b) => b.hash === ab.hash);
+        return !existing || existing.url !== ab.url;
+      });
+
+    if (hasChanged) {
+      setLibrary(updatedLibrary);
+    }
+  }, [arcBooks, libraryBooks, setLibrary]);
+
+  useEffect(() => {
+    if (activeTab === 'arcs' && arcBooks.length === 0) {
+      setActiveTab('library');
+    }
+  }, [arcBooks.length, activeTab]);
   // "Import from folder" dialog state. Held as a small object rather
   // than a boolean because we need a default starting directory to seed
   // the path field, and we want the dialog to remain mounted long
@@ -1962,32 +2029,106 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           groupName={currentVirtualGroup.groupName}
         />
       )}
+      {showBookshelf && !isSelectMode && token && arcBooks.length > 0 && (
+        <div className='flex px-4 border-b border-base-300 gap-x-6 pb-2 mb-4 text-sm font-medium'>
+          <button
+            className={clsx(
+              'pb-1 transition-colors border-b-2',
+              activeTab === 'library'
+                ? 'border-primary text-primary font-semibold'
+                : 'border-transparent text-base-content/60 hover:text-base-content',
+            )}
+            onClick={() => setActiveTab('library')}
+          >
+            {_('My Books')}
+          </button>
+          <button
+            className={clsx(
+              'pb-1 transition-colors border-b-2 relative',
+              activeTab === 'arcs'
+                ? 'border-primary text-primary font-semibold'
+                : 'border-transparent text-base-content/60 hover:text-base-content',
+            )}
+            onClick={() => setActiveTab('arcs')}
+          >
+            {_('Review Copies (ARCs)')}
+            {arcBooks.length > 0 && (
+              <span className='absolute -top-1 -right-4 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-content font-bold'>
+                {arcBooks.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
       {showBookshelf &&
-        (libraryBooks.some((book) => !book.deletedAt) ? (
+        (activeTab === 'library' ? (
+          libraryBooks.some((book) => !book.deletedAt) ? (
+            <div aria-label={_('Your Bookshelf')} className='flex min-h-0 flex-grow flex-col'>
+              <div
+                ref={containerRef}
+                className={clsx(
+                  'scroll-container drop-zone flex min-h-0 flex-grow flex-col',
+                  isDragging && 'drag-over',
+                )}
+                style={{
+                  paddingRight: `${insets.right}px`,
+                  paddingLeft: `${insets.left}px`,
+                }}
+              >
+                <DropIndicator />
+                <Bookshelf
+                  libraryBooks={libraryBooks}
+                  isSelectMode={isSelectMode}
+                  isSelectAll={isSelectAll}
+                  isSelectNone={isSelectNone}
+                  onScrollerRef={handleScrollerRef}
+                  handleImportBooks={setImportMenuAnchor}
+                  handleBookUpload={handleBookUpload}
+                  handleBookDownload={handleBookDownload}
+                  handleBookDelete={handleBookDelete('both')}
+                  handleBookPurge={handleBookDelete('purge')}
+                  handleSetSelectMode={handleSetSelectMode}
+                  handleShowDetailsBook={handleShowDetailsBook}
+                  handleLibraryNavigation={handleLibraryNavigation}
+                  booksTransferProgress={booksTransferProgress}
+                  handlePushLibrary={pushLibrary}
+                  onSearchContents={() => handleSearchTargetChange('text')}
+                  onSearchProgress={setLibrarySearchProgress}
+                  contentSearch={
+                    librarySearchTarget === 'text'
+                      ? { query: searchParams?.get('q') ?? '', config: librarySearchConfig }
+                      : null
+                  }
+                />
+              </div>
+            </div>
+          ) : (
+            <div className='hero drop-zone h-screen items-center justify-center'>
+              <DropIndicator />
+              <LibraryEmptyState onImport={setImportMenuAnchor} />
+            </div>
+          )
+        ) : arcBooks.length > 0 ? (
           <div aria-label={_('Your Bookshelf')} className='flex min-h-0 flex-grow flex-col'>
             <div
               ref={containerRef}
-              className={clsx(
-                'scroll-container drop-zone flex min-h-0 flex-grow flex-col',
-                isDragging && 'drag-over',
-              )}
+              className='scroll-container drop-zone flex min-h-0 flex-grow flex-col'
               style={{
                 paddingRight: `${insets.right}px`,
                 paddingLeft: `${insets.left}px`,
               }}
             >
-              <DropIndicator />
               <Bookshelf
-                libraryBooks={libraryBooks}
-                isSelectMode={isSelectMode}
-                isSelectAll={isSelectAll}
-                isSelectNone={isSelectNone}
+                libraryBooks={arcBooks}
+                isSelectMode={false}
+                isSelectAll={false}
+                isSelectNone={false}
                 onScrollerRef={handleScrollerRef}
                 handleImportBooks={setImportMenuAnchor}
-                handleBookUpload={handleBookUpload}
-                handleBookDownload={handleBookDownload}
-                handleBookDelete={handleBookDelete('both')}
-                handleBookPurge={handleBookDelete('purge')}
+                handleBookUpload={async () => false}
+                handleBookDownload={async () => false}
+                handleBookDelete={async () => false}
+                handleBookPurge={async () => false}
                 handleSetSelectMode={handleSetSelectMode}
                 handleShowDetailsBook={handleShowDetailsBook}
                 handleLibraryNavigation={handleLibraryNavigation}
@@ -1995,18 +2136,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 handlePushLibrary={pushLibrary}
                 onSearchContents={() => handleSearchTargetChange('text')}
                 onSearchProgress={setLibrarySearchProgress}
-                contentSearch={
-                  librarySearchTarget === 'text'
-                    ? { query: searchParams?.get('q') ?? '', config: librarySearchConfig }
-                    : null
-                }
+                contentSearch={null}
               />
             </div>
           </div>
         ) : (
-          <div className='hero drop-zone h-screen items-center justify-center'>
-            <DropIndicator />
-            <LibraryEmptyState onImport={setImportMenuAnchor} />
+          <div className='hero h-screen items-center justify-center flex flex-col gap-2'>
+            <p className='text-base-content/60 text-sm'>
+              {_("You don't have any approved Advance Reader Copies yet.")}
+            </p>
           </div>
         ))}
       {importMenuAnchor && (
@@ -2031,18 +2169,32 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           isOpen={!!showDetailsBook}
           book={showDetailsBook}
           onClose={() => setShowDetailsBook(null)}
-          handleBookUpload={handleBookUpload}
-          handleBookDownload={handleBookDownload}
-          handleBookDelete={handleBookDelete('both')}
+          handleBookUpload={showDetailsBook.hash.startsWith('arc_') ? undefined : handleBookUpload}
+          handleBookDownload={
+            showDetailsBook.hash.startsWith('arc_') ? undefined : handleBookDownload
+          }
+          handleBookDelete={
+            showDetailsBook.hash.startsWith('arc_') ? undefined : handleBookDelete('both')
+          }
           // Readest storage only. A third-party provider mirrors the library, so
           // removing just its cloud copy is not expressible: the next sync would
           // upload the still-local book straight back (#5084).
           handleBookDeleteCloudBackup={
-            isReadestCloudStorageActive(settings) ? handleBookDelete('cloud') : undefined
+            showDetailsBook.hash.startsWith('arc_')
+              ? undefined
+              : isReadestCloudStorageActive(settings)
+                ? handleBookDelete('cloud')
+                : undefined
           }
-          handleBookDeleteLocalCopy={handleBookDelete('local')}
-          handleBookPurge={handleBookDelete('purge')}
-          handleBookMetadataUpdate={handleUpdateMetadata}
+          handleBookDeleteLocalCopy={
+            showDetailsBook.hash.startsWith('arc_') ? undefined : handleBookDelete('local')
+          }
+          handleBookPurge={
+            showDetailsBook.hash.startsWith('arc_') ? undefined : handleBookDelete('purge')
+          }
+          handleBookMetadataUpdate={
+            showDetailsBook.hash.startsWith('arc_') ? async () => {} : handleUpdateMetadata
+          }
           onMetadataValueClick={handleMetadataValueClick}
         />
       )}
