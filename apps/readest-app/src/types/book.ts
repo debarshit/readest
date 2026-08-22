@@ -16,7 +16,9 @@ export type BookFormat =
   | 'FB2'
   | 'FBZ'
   | 'TXT'
-  | 'MD';
+  | 'MD'
+  // Streaming audiobook from an Audiobookshelf server; filePath is abs://<serverId>/<itemId>
+  | 'ABS';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt';
 export type ReadingStatus = 'unread' | 'reading' | 'finished' | 'abandoned';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
@@ -139,6 +141,15 @@ export interface Book {
   // library can badge it without opening the file. Derived from the file on
   // every import, like `format` — not user data, so it needs no LWW timestamp.
   hasNarration?: boolean;
+  duration?: number; // total audio length in seconds (ABS audiobooks)
+  // Marks this ABS stub as a podcast show rather than an audiobook. Audiobook
+  // shows remain unmarked (absMediaType undefined) — presence of the field
+  // set to 'podcast' is the only signal.
+  absMediaType?: 'podcast';
+  // Episode count for an ABS podcast show stub. Drives the library grid's
+  // episode-count badge and lets reconcileAbsBooks detect a new episode as a
+  // change even though title/author/duration are otherwise unchanged.
+  episodeCount?: number;
 
   metadata?: BookMetadata;
   // Field-level LWW timestamp for the metadata group (title, author, tags,
