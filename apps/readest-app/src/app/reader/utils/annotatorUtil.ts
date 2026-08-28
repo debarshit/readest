@@ -381,13 +381,31 @@ export function drawAnnotationOverlay(
     viewSettings: ViewSettings;
     isDarkMode: boolean;
     isMobile: boolean;
+    supabaseUserId?: string | null;
   },
 ): void {
   const { draw, annotation, doc, range } = detail;
-  const { settings, viewSettings, isDarkMode, isMobile } = ctx;
+  const { settings, viewSettings, isDarkMode, isMobile, supabaseUserId } = ctx;
   const isBwEink = viewSettings.isEink && !viewSettings.isColorEink;
   const { style, color, value } = annotation;
   const hexColor = getHighlightColorHex(settings, color);
+
+  const isOtherUserAnnotation =
+    !!(annotation as any).user_name &&
+    (!supabaseUserId || (annotation as any).supabaseUserId !== supabaseUserId);
+
+  const wrappedDraw = (func: any, opts?: any) => {
+    return (rects: any[]) => {
+      const el = func(rects, opts);
+      if (el && isOtherUserAnnotation && (annotation as any).user_name) {
+        const titleEl = doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+        titleEl.textContent = (annotation as any).user_name;
+        el.appendChild(titleEl);
+      }
+      return el;
+    };
+  };
+
   // Choose what to draw from the overlay's `value` (cfi vs NOTE_PREFIX+cfi),
   // not from `annotation.note`: a unified record (style + note) is added as
   // two overlays and must draw a highlight for the cfi overlay AND a bubble
@@ -400,7 +418,7 @@ export function drawAnnotationOverlay(
   const reaction = annotation.reaction;
   if (kind === 'bubble') {
     const { writingMode } = doc.defaultView!.getComputedStyle(startElement());
-    draw(Overlayer.bubble, { writingMode });
+    (draw as any)(wrappedDraw(Overlayer.bubble, { writingMode }));
   } else if (reaction && kind !== 'bubble') {
     const drawCombined = (rects: any[]) => {
       const parentG = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -463,14 +481,23 @@ export function drawAnnotationOverlay(
           parentG.appendChild(foreignObject);
         }
       }
+
+      if (isOtherUserAnnotation && (annotation as any).user_name) {
+        const titleEl = doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+        titleEl.textContent = (annotation as any).user_name;
+        parentG.appendChild(titleEl);
+      }
+
       return parentG;
     };
     (draw as (func: unknown) => void)(drawCombined);
   } else if (kind === 'highlight') {
-    draw(Overlayer.highlight, {
-      color: getAnnotationOverlayColor('highlight', hexColor, { isBwEink, isDarkMode }),
-      vertical: viewSettings.vertical,
-    });
+    (draw as any)(
+      wrappedDraw(Overlayer.highlight, {
+        color: getAnnotationOverlayColor('highlight', hexColor, { isBwEink, isDarkMode }),
+        vertical: viewSettings.vertical,
+      }),
+    );
   } else if (kind === 'underline' || kind === 'squiggly') {
     const { writingMode, lineHeight, fontSize } = doc.defaultView!.getComputedStyle(startElement());
     const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
@@ -481,11 +508,13 @@ export function drawAnnotationOverlay(
     const padding = viewSettings.vertical
       ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
       : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
-    draw(Overlayer[kind], {
-      writingMode,
-      color: getAnnotationOverlayColor(kind, hexColor, { isBwEink, isDarkMode }),
-      padding,
-    });
+    (draw as any)(
+      wrappedDraw(Overlayer[kind], {
+        writingMode,
+        color: getAnnotationOverlayColor(kind, hexColor, { isBwEink, isDarkMode }),
+        padding,
+      }),
+    );
   }
 }
 
