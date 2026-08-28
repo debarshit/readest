@@ -177,20 +177,24 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   const { setBuddyReadId } = useBuddyReadStore();
 
+  const sideBarBookTitle = useBookDataStore((state) => {
+    if (!sideBarBookKey) return null;
+    const id = sideBarBookKey.split('-')[0]!;
+    return state.booksData[id]?.book?.title;
+  });
+
   useEffect(() => {
-    if (!sideBarBookKey || !user) return;
-    const bookData = getBookData(sideBarBookKey);
-    const title = bookData?.book?.title;
+    if (!sideBarBookKey || !user || !sideBarBookTitle) return;
 
     const checkBuddyReads = async () => {
       try {
         const url = `${getAPIBaseUrl()}/social/buddy-reads/my-reads`;
         const response = await fetchWithAuth(url, { method: 'GET' });
         const resData = await response.json();
-        const myBuddyReads = resData.data?.buddyReads || [];
+        const myBuddyReads = resData.data?.data || [];
 
         const match = myBuddyReads.find(
-          (br: any) => br.title?.toLowerCase() === title?.toLowerCase(),
+          (br: any) => br.book_title?.toLowerCase() === sideBarBookTitle.toLowerCase(),
         );
 
         if (match) {
@@ -208,7 +212,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     };
 
     checkBuddyReads();
-  }, [sideBarBookKey, user, setBuddyReadId, getBookData]);
+  }, [sideBarBookKey, user, sideBarBookTitle, setBuddyReadId]);
 
   useEffect(() => {
     if (bookKeys && bookKeys.length > 0) {
