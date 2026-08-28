@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { eventDispatcher } from '@/utils/event';
@@ -18,11 +19,7 @@ import { buildAnnotationCopyMarkdown } from '@/utils/note';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { BRAND_NAME } from '@/services/branding';
-import {
-  applyNoteBubbleTransition,
-  decideNoteBubbleTransition,
-  removeBookNoteOverlays,
-} from '../../utils/annotatorUtil';
+import { removeBookNoteOverlays } from '../../utils/annotatorUtil';
 import { parseNoteMarkdown } from '../../utils/noteMarkdown';
 import { useSaveBooknoteNoteText } from '../../hooks/useSaveBooknoteNoteText';
 import { useInlineTextEditor } from '../../hooks/useInlineTextEditor';
@@ -50,6 +47,14 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
   const { setNotebookEditAnnotation, setNotebookVisible } = useNotebookStore();
+  const { user } = useAuth();
+
+  const isOtherUserAnnotation = useMemo(() => {
+    const annot = item as any;
+    if (!annot.user_name) return false;
+    if (!user?.id || !annot.supabaseUserId) return true;
+    return annot.supabaseUserId !== user.id;
+  }, [item, user?.id]);
 
   const globalReadSettings = settings.globalReadSettings;
   const customColors = globalReadSettings.customHighlightColors;
@@ -186,7 +191,8 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   }
 
   const isEditable =
-    !!item.note || isBookmark || (!!inlineNoteEditing && item.type === 'annotation');
+    !isOtherUserAnnotation &&
+    (!!item.note || isBookmark || (!!inlineNoteEditing && item.type === 'annotation'));
 
   return (
     <li
@@ -219,6 +225,22 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
           } as React.CSSProperties
         }
       >
+        {(item as any).user_name && (
+          <div className='flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold text-base-content/60'>
+            {(item as any).user_avatar ? (
+              <img
+                src={(item as any).user_avatar}
+                alt={(item as any).user_name}
+                className='w-3.5 h-3.5 rounded-full object-cover'
+              />
+            ) : (
+              <div className='w-3.5 h-3.5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[9px] font-bold uppercase'>
+                {(item as any).user_name.slice(0, 1)}
+              </div>
+            )}
+            <span>{(item as any).user_name}</span>
+          </div>
+        )}
         {item.note && (
           <div
             className='content prose prose-sm font-size-sm'
@@ -307,15 +329,17 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
               <MdContentCopy size={size18} />
             </button>
 
-            <button
-              onClick={deleteNote.bind(null, item)}
-              className='btn btn-ghost btn-xs p-0 text-red-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
-              aria-label={_('Delete')}
-            >
-              <MdDelete size={size18} />
-            </button>
+            {!isOtherUserAnnotation && (
+              <button
+                onClick={deleteNote.bind(null, item)}
+                className='btn btn-ghost btn-xs p-0 text-red-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+                aria-label={_('Delete')}
+              >
+                <MdDelete size={size18} />
+              </button>
+            )}
 
-            {isEditable && (
+            {isEditable && !isOtherUserAnnotation && (
               <button
                 onClick={
                   item.type === 'bookmark'

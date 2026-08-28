@@ -410,7 +410,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       // view, minus the range-edit handles, which only operate on main view
       // documents.
       if (detail.annotated && detail.cfi) {
-        const { booknotes = [] } = getConfig(bookKey)!;
+        const { booknotes: localBooknotes = [] } = getConfig(bookKey)!;
+        const buddyReadAnnotations = useBuddyReadStore.getState().annotations || [];
+        const localIds = new Set(localBooknotes.map((n) => n.id));
+        const filteredBuddyNotes = buddyReadAnnotations.filter((n) => !localIds.has(n.id));
+        const booknotes = [...localBooknotes, ...filteredBuddyNotes];
         const annotation = booknotes.find(
           (b) =>
             b.type === 'annotation' &&
@@ -618,7 +622,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const { value, index, range } = detail;
     const { booknotes: localBooknotes = [] } = getConfig(bookKey)!;
     const buddyReadAnnotations = useBuddyReadStore.getState().annotations || [];
-    const booknotes = [...localBooknotes, ...buddyReadAnnotations];
+    const localIds = new Set(localBooknotes.map((n) => n.id));
+    const filteredBuddyNotes = buddyReadAnnotations.filter((n) => !localIds.has(n.id));
+    const booknotes = [...localBooknotes, ...filteredBuddyNotes];
     const isNote = value.startsWith(NOTE_PREFIX);
     const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
     // A click on a fan-out copy of a global annotation reports a
@@ -1127,10 +1133,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // array so we don't re-walk N items each turn just to find the same few
   // global ones. The index is recomputed only when `booknotes` itself
   // changes (add/remove/edit) — not on every page turn.
-  const buddyReadAnnotations = useBuddyReadStore((s) => s.annotations);
+  const buddyReadAnnotations = useBuddyReadStore((s) => s.annotations) || [];
   const combinedNotes = useMemo(() => {
     const localNotes = config.booknotes ?? [];
-    return [...localNotes, ...buddyReadAnnotations];
+    const localIds = new Set(localNotes.map((n) => n.id));
+    const filteredBuddyNotes = buddyReadAnnotations.filter((n) => !localIds.has(n.id));
+    return [...localNotes, ...filteredBuddyNotes];
   }, [config.booknotes, buddyReadAnnotations]);
 
   const annotationIndex = useMemo(() => buildAnnotationIndex(combinedNotes), [combinedNotes]);
