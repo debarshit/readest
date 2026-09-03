@@ -24,7 +24,7 @@ jobs:
       # skipPush is a cachix-action input, not an install-nix-action one. The
       # cache is public, so pulling needs no token at all; omitting authToken
       # keeps the push token out of PR-triggered builds entirely.
-      - uses: cachix/cachix-action@f495f3ffa2f3810a92e5cc0abc2c5d6a2a07ec82
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866
         with:
           name: readest
           skipPush: true
@@ -163,7 +163,7 @@ jobs:
         run: |
           pnpm format:check || (pnpm format && git diff && exit 1)
 
-      # pnpm lint here is web-only (tsgo + biome). The koplugin syntax check
+      # pnpm lint here is web-only (tsc + biome). The koplugin syntax check
       # (lint:lua) runs in the test_extensions job, which installs LuaJIT only
       # when the koplugin sources changed.
       - name: run lint

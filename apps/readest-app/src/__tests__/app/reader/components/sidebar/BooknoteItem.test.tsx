@@ -13,7 +13,9 @@ const mocks = vi.hoisted(() => {
   return {
     state,
     setNotebookVisible: vi.fn(),
+    setNotebookActiveTab: vi.fn(),
     setNotebookEditAnnotation: vi.fn(),
+    toast: vi.fn(),
     addAnnotation: vi.fn(),
     saveConfig: vi.fn(),
     // Mirrors the real store: `updateBooknotes` writes back whatever array
@@ -29,12 +31,13 @@ const mocks = vi.hoisted(() => {
 vi.mock('@/store/notebookStore', () => ({
   useNotebookStore: () => ({
     setNotebookVisible: mocks.setNotebookVisible,
+    setNotebookActiveTab: mocks.setNotebookActiveTab,
     setNotebookEditAnnotation: mocks.setNotebookEditAnnotation,
   }),
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {} }),
+  useEnv: () => ({ envConfig: {}, appService: { isMobile: false } }),
 }));
 
 vi.mock('@/store/settingsStore', () => ({

@@ -107,7 +107,7 @@ export const AboutWindow = () => {
       isOpen={isOpen}
       title={_('About {{brand}}', { brand: BRAND_NAME })}
       onClose={handleClose}
-      boxClassName='sm:!w-[480px] sm:!max-w-screen-sm sm:h-auto'
+      boxClassName='sm:w-[480px]! sm:max-w-(--breakpoint-sm)! sm:h-auto'
     >
       {isOpen && (
         <div className='about-content flex flex-col items-center justify-center gap-4 pb-10 sm:pb-0'>

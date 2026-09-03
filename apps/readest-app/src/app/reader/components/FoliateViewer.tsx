@@ -33,6 +33,7 @@ import {
   applyEinkModeAttribute,
   applyFixedlayoutStyles,
   applyImageStyle,
+  applyNamespacedAttributes,
   applyScrollbarStyle,
   applyScrollModeClass,
   applyThemeModeClass,
@@ -85,6 +86,7 @@ import { isMetered } from '@/utils/network';
 import { eventDispatcher } from '@/utils/event';
 import { isFontType } from '@/utils/font';
 import { getScrollGapAttr } from '@/utils/webtoon';
+import { observeDynamicResources } from '@/utils/dynamicResources';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
@@ -302,6 +304,7 @@ const FoliateViewer: React.FC<{
               content: data,
               sectionHref: detail.name,
               transformers: [
+                'epubSwitch',
                 'style',
                 'punctuation',
                 'footnote',
@@ -347,6 +350,9 @@ const FoliateViewer: React.FC<{
     const detail = (event as CustomEvent).detail;
     console.log('doc index loaded:', detail.index);
     if (detail.doc) {
+      // Repair the parsed DOM before anything reads it: the renderer and the
+      // fix-ups below both resolve styles off this document.
+      applyNamespacedAttributes(detail.doc);
       const renderer = viewRef.current?.renderer;
       const writingDir = renderer?.setStyles && getDirection(detail.doc);
       const viewSettings = getViewSettings(bookKey)!;
@@ -405,6 +411,13 @@ const FoliateViewer: React.FC<{
         skipToNextSectionLabel: _('End of this section. Continue to the next.'),
       });
 
+      if (viewSettings.allowScript) {
+        // Book scripts may add media, or a background image, with a path
+        // relative to the section long after foliate's load-time URL rewrite.
+        const section = bookDoc.sections?.[detail.index];
+        if (section?.loadHref) observeDynamicResources(detail.doc, section.loadHref);
+      }
+
       // Inline scripts in tauri platforms are not executed by default
       if (viewSettings.allowScript && isTauriAppPlatform()) {
         evalInlineScripts(detail.doc);
@@ -451,7 +464,13 @@ const FoliateViewer: React.FC<{
         });
         detail.doc.addEventListener(
           'click',
-          handleClick.bind(null, bookKey, doubleClickDisabled, !!bookData?.isFixedLayout),
+          handleClick.bind(
+            null,
+            bookKey,
+            doubleClickDisabled,
+            !!bookData?.isFixedLayout,
+            bookData?.book?.format === 'CBZ',
+          ),
         );
         detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey));
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
@@ -788,6 +807,7 @@ const FoliateViewer: React.FC<{
         view.renderer.setAttribute('spread', viewSettings.spreadMode);
         view.renderer.setAttribute('scale-factor', viewSettings.zoomLevel);
         view.renderer.setAttribute('scroll-gap', getScrollGapAttr(viewSettings.webtoonMode));
+        view.renderer.toggleAttribute('lock-pan-x', !!viewSettings.lockHorizontalPan);
       } else {
         view.renderer.setAttribute('max-column-count', maxColumnCount);
         view.renderer.setAttribute('max-inline-size', `${maxInlineSize}px`);
@@ -1077,7 +1097,7 @@ const FoliateViewer: React.FC<{
         role='main'
         aria-label={_('Book Content')}
         className={clsx(
-          'foliate-viewer absolute h-[100%] w-[100%] focus:outline-none',
+          'foliate-viewer absolute h-[100%] w-[100%] focus:outline-hidden',
           viewState?.loading && 'bg-base-100',
         )}
         style={{

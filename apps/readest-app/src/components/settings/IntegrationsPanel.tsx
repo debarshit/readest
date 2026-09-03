@@ -9,6 +9,7 @@ import {
   RiRssLine,
   RiBookReadLine,
   RiBook3Line,
+  RiFileList3Line,
   RiDiscordLine,
   RiSendPlaneLine,
   RiWifiLine,
@@ -29,11 +30,12 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { useABSServerStore } from '@/store/absServerStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
+import { useLocalSendStore } from '@/store/localsendStore';
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
 import { isCloudSyncAllowed } from '@/utils/access';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
-import { isLocalSendEnabled } from '@/services/localsend/devicePrefs';
+import { getLocalSendAlias, isLocalSendEnabled } from '@/services/localsend/devicePrefs';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { isICloudSupportedPlatform } from '@/services/sync/providers/icloud/buildICloudProvider';
@@ -44,6 +46,7 @@ import BookOrbitForm from './integrations/BookOrbitForm';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
+import NotionForm from './integrations/NotionForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
 import LocalSendForm from './integrations/LocalSendForm';
 import WebDAVForm from './integrations/WebDAVForm';
@@ -80,6 +83,7 @@ type SubPage =
   | 'readest-cloud'
   | 'readwise'
   | 'hardcover'
+  | 'notion'
   | 'opds'
   | 'audiobookshelf'
   | 'send'
@@ -108,6 +112,9 @@ const IntegrationsPanel: React.FC = () => {
   const opdsCount = opdsCatalogs.filter((c) => !c.deletedAt).length;
   const absServers = useABSServerStore((s) => s.servers);
   const absCount = absServers.filter((s) => !s.deletedAt).length;
+  // The device name Nearby BookDrop announces once its service is running,
+  // so the integrations row can show it in place of a bare "On".
+  const localSendAlias = useLocalSendStore((s) => s.status?.alias);
   // Surface a library-wide WebDAV sync that's mid-flight in the row's
   // status line. Keeps the user from feeling like the run was lost
   // when they back out of the WebDAV sub-page or close the dialog.
@@ -134,8 +141,8 @@ const IntegrationsPanel: React.FC = () => {
   // temporarily UNGATED while the feature stabilises — `isCloudSyncAllowed`
   // returns true for every plan until `CLOUD_SYNC_REQUIRES_PREMIUM` is flipped
   // back on. The `?? 'free'` keeps the (re-gated) loading state non-premium.
-  const { userProfilePlan } = useQuotaStats();
-  const isCloudSyncPremium = isCloudSyncAllowed(userProfilePlan ?? 'free');
+  const { userProfilePlan, customizationPurchased } = useQuotaStats();
+  const isCloudSyncPremium = isCloudSyncAllowed(userProfilePlan ?? 'free', customizationPurchased);
   // Only surface the tier chip to users who cannot use the feature yet — signed
   // out (known immediately), or signed in on a plan without cloud sync (known
   // once the plan resolves). An entitled user already has it, so the badge is
@@ -213,6 +220,7 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'icloud' ||
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
+      requestedSubPage === 'notion' ||
       requestedSubPage === 'opds' ||
       requestedSubPage === 'audiobookshelf' ||
       requestedSubPage === 'send' ||
@@ -449,6 +457,12 @@ const IntegrationsPanel: React.FC = () => {
         <HardcoverForm onBack={() => setSubPage(null)} />
       </div>
     );
+  if (subPage === 'notion')
+    return (
+      <div className='my-4 w-full'>
+        <NotionForm onBack={() => setSubPage(null)} />
+      </div>
+    );
   if (subPage === 'opds')
     return (
       <div className='my-4 w-full'>
@@ -488,6 +502,10 @@ const IntegrationsPanel: React.FC = () => {
 
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
+  const notionStatus =
+    settings.notion?.enabled && settings.notion.accessToken && settings.notion.databaseId
+      ? _('Connected')
+      : _('Not connected');
 
   // Cloud sync providers are independently selectable (#5062): any subset of
   // {Readest Cloud, WebDAV, Google Drive, S3, OneDrive, iCloud} can sync the
@@ -575,6 +593,11 @@ const IntegrationsPanel: React.FC = () => {
   const opdsStatus =
     opdsCount > 0 ? _('{{count}} catalog', { count: opdsCount }) : _('No catalogs');
   const absStatus = absCount > 0 ? _('{{count}} server', { count: absCount }) : _('No servers');
+  // Enabled rows show the announced device name (falling back to the stored
+  // custom alias, then a bare "On" until the service reports its alias).
+  const localSendStatus = !isLocalSendEnabled()
+    ? _('Off')
+    : localSendAlias || getLocalSendAlias() || _('On');
 
   return (
     <div className='my-4 w-full space-y-6'>
@@ -614,6 +637,12 @@ const IntegrationsPanel: React.FC = () => {
               title={_('Hardcover')}
               status={hardcoverStatus}
               onClick={() => setSubPage('hardcover')}
+            />
+            <IntegrationRow
+              icon={RiFileList3Line}
+              title={_('Notion')}
+              status={notionStatus}
+              onClick={() => setSubPage('notion')}
             />
           </div>
         </div>
@@ -781,8 +810,8 @@ const IntegrationsPanel: React.FC = () => {
             {isTauriAppPlatform() && (
               <IntegrationRow
                 icon={RiWifiLine}
-                title={_('LocalSend')}
-                status={isLocalSendEnabled() ? _('On') : _('Off')}
+                title={_('Nearby BookDrop')}
+                status={localSendStatus}
                 onClick={() => setSubPage('localsend')}
               />
             )}
@@ -825,12 +854,12 @@ const IntegrationRow: React.FC<IntegrationRowProps> = ({ icon: Icon, title, stat
       className={clsx(
         'group flex w-full items-center gap-3 px-4 py-3 text-left',
         'transition-colors duration-150',
-        'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+        'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset',
       )}
     >
       <span
         className={clsx(
-          'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
           'bg-base-200 text-base-content/70',
           'transition-colors duration-150',
           'group-hover:bg-base-300/70',
@@ -842,7 +871,7 @@ const IntegrationRow: React.FC<IntegrationRowProps> = ({ icon: Icon, title, stat
         <SettingLabel>{title}</SettingLabel>
         <span className='text-base-content/65 truncate text-[0.85em]'>{status}</span>
       </div>
-      <MdChevronRight className='text-base-content/50 h-5 w-5 flex-shrink-0' />
+      <MdChevronRight className='text-base-content/50 h-5 w-5 shrink-0' />
     </button>
   );
 };
@@ -887,12 +916,12 @@ const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
         onClick={onOpen}
         className={clsx(
           'flex min-w-0 flex-1 items-center gap-3 text-left',
-          'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+          'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset',
         )}
       >
         <span
           className={clsx(
-            'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
             'bg-base-200 text-base-content/70',
             'transition-colors duration-150',
             'group-hover:bg-base-300/70',
@@ -908,7 +937,7 @@ const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
       {badge && <span className='badge badge-sm badge-ghost shrink-0'>{badge}</span>}
       <input
         type='checkbox'
-        className='checkbox checkbox-sm flex-shrink-0'
+        className='checkbox checkbox-sm shrink-0'
         checked={checked}
         disabled={!canToggle}
         onChange={(e) => onToggle(e.target.checked)}
@@ -920,8 +949,8 @@ const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
         onClick={onOpen}
         aria-label={title}
         className={clsx(
-          'text-base-content/50 hover:text-base-content/80 flex-shrink-0 rounded',
-          'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+          'text-base-content/50 hover:text-base-content/80 shrink-0 rounded-sm',
+          'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
         )}
       >
         <MdChevronRight className='h-5 w-5' />
@@ -954,7 +983,7 @@ const IntegrationToggleRow: React.FC<IntegrationToggleRowProps> = ({
     <label className='flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left'>
       <span
         className={clsx(
-          'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
           'bg-base-200 text-base-content/70',
         )}
       >
@@ -964,12 +993,7 @@ const IntegrationToggleRow: React.FC<IntegrationToggleRowProps> = ({
         <SettingLabel>{title}</SettingLabel>
         <span className='text-base-content/65 truncate text-[0.85em]'>{description}</span>
       </div>
-      <input
-        type='checkbox'
-        className='toggle flex-shrink-0'
-        checked={checked}
-        onChange={onChange}
-      />
+      <input type='checkbox' className='toggle shrink-0' checked={checked} onChange={onChange} />
     </label>
   );
 };

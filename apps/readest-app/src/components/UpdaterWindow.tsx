@@ -555,7 +555,7 @@ export const UpdaterContent = ({
           </div>
 
           {checkUpdate ? (
-            <div className='text-base-content flex-grow text-sm'>
+            <div className='text-base-content grow text-sm'>
               <h2 className='mb-4 text-center font-bold sm:text-start'>
                 {_('A new version of {{brand}} is available!', { brand: BRAND_NAME })}
               </h2>
@@ -569,7 +569,7 @@ export const UpdaterContent = ({
 
               <div className='flex w-full flex-row items-center justify-end gap-4'>
                 {progress !== null && (
-                  <div className='flex flex-grow flex-col'>
+                  <div className='flex grow flex-col'>
                     <progress
                       className='progress my-1 h-4 w-full'
                       value={progress}
@@ -604,7 +604,7 @@ export const UpdaterContent = ({
               </div>
             </div>
           ) : (
-            <div className='text-base-content flex h-full flex-grow flex-col text-sm sm:flex-row'>
+            <div className='text-base-content flex h-full grow flex-col text-sm sm:flex-row'>
               <div className='flex flex-col items-center justify-center gap-4 p-1 sm:items-start sm:gap-2'>
                 <h2 className='text-center font-bold sm:text-start'>
                   {_('Version {{version}}', { version: currentVersion })}
@@ -743,7 +743,7 @@ export const UpdaterWindow = () => {
         checkUpdate ? _('Software Update') : _("What's New in {{brand}}", { brand: BRAND_NAME })
       }
       onClose={() => setIsOpen(false)}
-      boxClassName='sm:!w-[75%] sm:h-auto sm:!max-h-[85vh] sm:!max-w-2xl'
+      boxClassName='sm:w-[75%]! sm:h-auto sm:max-h-[85vh]! sm:max-w-2xl!'
     >
       {isOpen && (
         <UpdaterContent

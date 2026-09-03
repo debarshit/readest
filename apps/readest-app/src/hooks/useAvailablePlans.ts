@@ -7,10 +7,13 @@ import { stubTranslation as _ } from '@/utils/misc';
 const IAP_PRODUCT_IDS = [
   'com.biblophile.readest.monthly.plus',
   'com.biblophile.readest.monthly.pro',
+  'com.biblophile.readest.yearly.plus',
+  'com.biblophile.readest.yearly.pro',
   'com.biblophile.readest.storage.1gb.purchase',
   'com.biblophile.readest.storage.2gb.purchase',
   'com.biblophile.readest.storage.5gb.purchase',
   'com.biblophile.readest.storage.10gb.purchase',
+  'com.biblophile.readest.customization.purchase',
 ];
 
 interface UseAvailablePlansParams {
