@@ -254,6 +254,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const annotPopupMaxWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupToolSize = useResponsiveSize(44);
   const toolbarToolTypes = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare);
+  const highlightOptionsAvailable = shouldShowHighlightOptions(toolbarToolTypes, selection ?? null);
   const annotPopupWidth = highlightOptionsAvailable
     ? annotPopupMaxWidth
     : Math.min(Math.max(toolbarToolTypes.length, 1) * annotPopupToolSize, annotPopupMaxWidth);
