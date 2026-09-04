@@ -38,6 +38,12 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install NDK
+        run: sdkmanager "ndk;28.2.13676358"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -61,6 +67,10 @@ jobs:
           cd apps/readest-app
           pnpm setup-vendors
 
+      - name: Create .env.local for Next.js
+        run: |
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > apps/readest-app/.env.local
+
       - name: Initialize Android Target
         run: |
           cd apps/readest-app
@@ -75,32 +85,46 @@ jobs:
           KEYSTORE_BASE64="${{ secrets.ANDROID_KEYSTORE_BASE64 || secrets.ANDROID_KEY_BASE64 }}"
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 --decode > $RUNNER_TEMP/release.keystore
-            cat <<EOF > apps/readest-app/src-tauri/gen/android/keystore.properties
-            keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-            password=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
-            keyPassword=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
-            storeFile=$RUNNER_TEMP/release.keystore
-          EOF
+            echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > apps/readest-app/src-tauri/gen/android/keystore.properties
+            echo "password=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> apps/readest-app/src-tauri/gen/android/keystore.properties
+            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> apps/readest-app/src-tauri/gen/android/keystore.properties
+            echo "storeFile=$RUNNER_TEMP/release.keystore" >> apps/readest-app/src-tauri/gen/android/keystore.properties
           fi
 
       - name: Build Android APK
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
         run: |
           cd apps/readest-app
           EXTRA_FLAGS=""
+          BUILD_SUBDIR="release"
           if [ "${{ inputs.build_type }}" == "debug" ]; then
             EXTRA_FLAGS="--debug"
+            BUILD_SUBDIR="debug"
           fi
 
           TARGET="${{ inputs.target_arch }}"
+          OUTPUT_DIR="src-tauri/gen/android/app/build/outputs/apk/universal/${BUILD_SUBDIR}"
+          mkdir -p "$OUTPUT_DIR"
+
           if [ "$TARGET" == "universal" ]; then
             pnpm tauri android build $EXTRA_FLAGS
           elif [ "$TARGET" == "aarch64 (arm64)" ]; then
             pnpm tauri android build -t aarch64 $EXTRA_FLAGS
           elif [ "$TARGET" == "all" ]; then
             pnpm tauri android build $EXTRA_FLAGS
+            cp ${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk ${OUTPUT_DIR}/app-universal-built.apk || true
+
             pnpm tauri android build -t aarch64 $EXTRA_FLAGS
+            cp ${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk ${OUTPUT_DIR}/app-arm64-${BUILD_SUBDIR}.apk || true
+
             pnpm tauri android build -t armv7 $EXTRA_FLAGS
+            cp ${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk ${OUTPUT_DIR}/app-armv7-${BUILD_SUBDIR}.apk || true
+
             pnpm tauri android build -t x86_64 $EXTRA_FLAGS
+            cp ${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk ${OUTPUT_DIR}/app-x86_64-${BUILD_SUBDIR}.apk || true
+
+            cp ${OUTPUT_DIR}/app-universal-built.apk ${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk || true
           fi
 
       - name: Upload Android APK Artifacts

@@ -51,12 +51,9 @@ jobs:
         run: |
           mkdir -p apps/readest-app/private_keys
           echo "${{ secrets.APPLE_API_KEY_P8_BASE64 }}" | base64 --decode > apps/readest-app/private_keys/AuthKey_${{ secrets.APPLE_API_KEY }}.p8
-
-          cat <<EOF > apps/readest-app/.env.ios-appstore.local
-          APPLE_API_KEY=${{ secrets.APPLE_API_KEY }}
-          APPLE_API_ISSUER=${{ secrets.APPLE_API_ISSUER }}
-          APPLE_API_KEY_PATH=$GITHUB_WORKSPACE/apps/readest-app/private_keys/AuthKey_${{ secrets.APPLE_API_KEY }}.p8
-          EOF
+          echo "APPLE_API_KEY=${{ secrets.APPLE_API_KEY }}" > apps/readest-app/.env.ios-appstore.local
+          echo "APPLE_API_ISSUER=${{ secrets.APPLE_API_ISSUER }}" >> apps/readest-app/.env.ios-appstore.local
+          echo "APPLE_API_KEY_PATH=$GITHUB_WORKSPACE/apps/readest-app/private_keys/AuthKey_${{ secrets.APPLE_API_KEY }}.p8" >> apps/readest-app/.env.ios-appstore.local
 
       - name: Install Apple Distribution Certificate & Provisioning Profile
         env:
@@ -94,6 +91,10 @@ jobs:
           cd apps/readest-app
           pnpm setup-vendors
 
+      - name: Create .env.local for Next.js
+        run: |
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > apps/readest-app/.env.local
+
       - name: Initialize iOS Target
         run: |
           cd apps/readest-app
@@ -101,7 +102,7 @@ jobs:
 
       - name: Configure iOS ExportOptions
         run: |
-          cat <<EOF > apps/readest-app/src-tauri/gen/apple/ExportOptions.plist
+          cat << 'EOF' > apps/readest-app/src-tauri/gen/apple/ExportOptions.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -126,6 +127,7 @@ jobs:
           </dict>
           </plist>
           EOF
+          sed -i '' 's/^[ ]*//' apps/readest-app/src-tauri/gen/apple/ExportOptions.plist || true
 
       - name: Auto-increment iOS Build Number (CFBundleVersion)
         run: |
@@ -139,6 +141,8 @@ jobs:
         run: |
           cd apps/readest-app
           pnpm run build-ios-appstore
+          bash scripts/fix-ios-appstore-appgroup.sh src-tauri/gen/apple/build/arm64/Readest.ipa
+          bash scripts/verify-ios-appstore-entitlements.sh src-tauri/gen/apple/build/arm64/Readest.ipa
 
       - name: Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
@@ -152,7 +156,7 @@ jobs:
         run: |
           cd apps/readest-app
           pnpm exec dotenv -e .env.ios-appstore.local -- bash -c \
-            'xcrun altool --upload-app --type ios --file src-tauri/gen/apple/build/arm64/Yomi.ipa --apiKey $APPLE_API_KEY --apiIssuer $APPLE_API_ISSUER'
+            'xcrun altool --upload-app --type ios --file src-tauri/gen/apple/build/arm64/Readest.ipa --apiKey $APPLE_API_KEY --apiIssuer $APPLE_API_ISSUER'
 
   # ==========================================
   # Android Google Play Build & Deploy Job
@@ -171,6 +175,12 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install NDK
+        run: sdkmanager "ndk;28.2.13676358"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -191,16 +201,14 @@ jobs:
         run: |
           mkdir -p fastlane
           echo "${{ secrets.GOOGLE_PLAY_KEY_JSON_BASE64 }}" | base64 --decode > fastlane/google-play-key.json
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > apps/readest-app/release.keystore
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 || secrets.ANDROID_KEY_BASE64 }}" | base64 --decode > apps/readest-app/release.keystore
 
-          cat <<EOF > apps/readest-app/.env.google-play.local
-          PACKAGE_NAME=com.biblophile.yomi
-          GOOGLE_PLAY_JSON_KEY_FILE=$GITHUB_WORKSPACE/fastlane/google-play-key.json
-          ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/apps/readest-app/release.keystore
-          ANDROID_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
-          EOF
+          echo "PACKAGE_NAME=com.biblophile.yomi" > apps/readest-app/.env.google-play.local
+          echo "GOOGLE_PLAY_JSON_KEY_FILE=$GITHUB_WORKSPACE/fastlane/google-play-key.json" >> apps/readest-app/.env.google-play.local
+          echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/apps/readest-app/release.keystore" >> apps/readest-app/.env.google-play.local
+          echo "ANDROID_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD || secrets.ANDROID_KEY_PASSWORD }}" >> apps/readest-app/.env.google-play.local
+          echo "ANDROID_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> apps/readest-app/.env.google-play.local
+          echo "ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> apps/readest-app/.env.google-play.local
 
       - name: Install Node Dependencies
         run: pnpm install --no-frozen-lockfile
@@ -210,7 +218,11 @@ jobs:
           cd apps/readest-app
           pnpm setup-vendors
 
-      - name: Initialize Android Target
+      - name: Create .env.local for Next.js
+        run: |
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > apps/readest-app/.env.local
+
+      - name: Initialize Android Target & Keystore
         run: |
           cd apps/readest-app
           rm -rf src-tauri/gen/android
@@ -218,10 +230,17 @@ jobs:
           pnpm tauri icon ../../data/icons/readest-book.png
           git checkout .
 
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > src-tauri/gen/android/keystore.properties
+          echo "password=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> src-tauri/gen/android/keystore.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> src-tauri/gen/android/keystore.properties
+          echo "storeFile=$GITHUB_WORKSPACE/apps/readest-app/release.keystore" >> src-tauri/gen/android/keystore.properties
+
       - name: Build Android Production App Bundle (.aab)
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
         run: |
           cd apps/readest-app
-          pnpm tauri android build --target aarch64 --bundle aab
+          pnpm tauri android build --bundle aab
 
       - name: Upload Android AAB Artifact
         uses: actions/upload-artifact@v4
@@ -234,5 +253,4 @@ jobs:
       - name: Deploy to Google Play Console via Fastlane
         run: |
           TRACK="${{ github.event.inputs.release_track || 'internal' }}"
-          cd apps/readest-app
-          pnpm exec dotenv -e .env.google-play.local -- fastlane android upload_$TRACK
+          pnpm --filter @readest/readest-app exec dotenv -e .env.google-play.local -- fastlane android upload_$TRACK
