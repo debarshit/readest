@@ -35,9 +35,9 @@ jobs:
           node-version: 22
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 11.1.1
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -188,9 +188,9 @@ jobs:
           node-version: 22
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 11.1.1
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -241,6 +241,9 @@ jobs:
           ORG_GRADLE_PROJECT_storeFlavor: googleplay
         run: |
           cd apps/readest-app
+          if grep -q 'REQUEST_INSTALL_PACKAGES' src-tauri/gen/android/app/src/main/AndroidManifest.xml; then
+            sed -i '/REQUEST_INSTALL_PACKAGES/d' src-tauri/gen/android/app/src/main/AndroidManifest.xml
+          fi
           pnpm tauri android build --bundle aab
 
       - name: Upload Android AAB Artifact
@@ -254,4 +257,5 @@ jobs:
       - name: Deploy to Google Play Console via Fastlane
         run: |
           TRACK="${{ github.event.inputs.release_track || 'internal' }}"
-          pnpm --filter @readest/readest-app exec dotenv -e .env.google-play.local -- fastlane android upload_$TRACK
+          cd apps/readest-app
+          pnpm exec dotenv -e .env.google-play.local -- bash -c "cd ../.. && fastlane android upload_${TRACK}"
