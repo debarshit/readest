@@ -31,21 +31,24 @@ android {
         jvmTarget = "1.8"
     }
 
+    val storeFlavor = (project.findProperty("storeFlavor") as? String)?.takeIf { it.isNotEmpty() }
+        ?: System.getenv("STORE_FLAVOR")?.takeIf { it.isNotEmpty() }
+        ?: "foss"
+
     flavorDimensions += "store"
     productFlavors {
-        create("foss") {
-            dimension = "store"
-        }
-        create("googleplay") {
+        create(storeFlavor) {
             dimension = "store"
         }
     }
 }
 
 dependencies {
-    "googleplayImplementation"("com.android.billingclient:billing:9.1.0")
-    "googleplayImplementation"("com.google.android.gms:play-services-base:18.5.0")
-    "googleplayImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    if (storeFlavor == "googleplay") {
+        "googleplayImplementation"("com.android.billingclient:billing:9.1.0")
+        "googleplayImplementation"("com.google.android.gms:play-services-base:18.5.0")
+        "googleplayImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    }
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.browser:browser:1.8.0")
