@@ -70,6 +70,7 @@ jobs:
       - name: Create .env.local for Next.js
         run: |
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_BIBLO_API_URL=${{ secrets.NEXT_PUBLIC_BIBLO_API_URL }}" >> apps/readest-app/.env.local
 
       - name: Initialize Android Target
         run: |
@@ -92,9 +93,8 @@ jobs:
           fi
 
       - name: Build Android APK
-        env:
-          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
         run: |
+          export NDK_HOME="${ANDROID_HOME}/ndk/28.2.13676358"
           cd apps/readest-app
           EXTRA_FLAGS=""
           BUILD_SUBDIR="release"

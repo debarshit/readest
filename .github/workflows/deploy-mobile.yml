@@ -94,6 +94,7 @@ jobs:
       - name: Create .env.local for Next.js
         run: |
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_BIBLO_API_URL=${{ secrets.NEXT_PUBLIC_BIBLO_API_URL }}" >> apps/readest-app/.env.local
 
       - name: Initialize iOS Target
         run: |
@@ -221,6 +222,7 @@ jobs:
       - name: Create .env.local for Next.js
         run: |
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_BIBLO_API_URL=${{ secrets.NEXT_PUBLIC_BIBLO_API_URL }}" >> apps/readest-app/.env.local
 
       - name: Initialize Android Target & Keystore
         run: |
@@ -237,9 +239,9 @@ jobs:
 
       - name: Build Android Production App Bundle (.aab)
         env:
-          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
           ORG_GRADLE_PROJECT_storeFlavor: googleplay
         run: |
+          export NDK_HOME="${ANDROID_HOME}/ndk/28.2.13676358"
           cd apps/readest-app
           if grep -q 'REQUEST_INSTALL_PACKAGES' src-tauri/gen/android/app/src/main/AndroidManifest.xml; then
             sed -i '/REQUEST_INSTALL_PACKAGES/d' src-tauri/gen/android/app/src/main/AndroidManifest.xml
@@ -253,6 +255,9 @@ jobs:
           name: yomi-android-aab
           path: apps/readest-app/src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
           if-no-files-found: warn
+
+      - name: Install Fastlane
+        run: gem install fastlane --no-document
 
       - name: Deploy to Google Play Console via Fastlane
         run: |
