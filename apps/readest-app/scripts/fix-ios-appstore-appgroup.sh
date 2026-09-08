@@ -44,7 +44,11 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 unzip -q "$IPA" -d "$WORK"
-APP="$WORK/Payload/Readest.app"
+APP="$(find "$WORK/Payload" -mindepth 1 -maxdepth 1 -name "*.app" | head -n 1)"
+if [ -z "$APP" ] || [ ! -d "$APP" ]; then
+  echo "fix-ios-appstore-appgroup: No .app found in Payload" >&2
+  exit 1
+fi
 
 # Re-sign a binary, preserving the entitlements the export already computed and
 # adding the App Group if it is missing.
@@ -67,7 +71,8 @@ resign_with_group() {
 for ext in "${EXTS[@]}"; do
   resign_with_group "$APP/PlugIns/$ext.appex" "$ext"
 done
-resign_with_group "$APP" "Readest"
+APP_NAME="$(basename "$APP" .app)"
+resign_with_group "$APP" "$APP_NAME"
 
 codesign --verify --deep --strict "$APP"
 

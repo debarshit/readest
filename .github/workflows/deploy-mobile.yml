@@ -95,11 +95,16 @@ jobs:
         run: |
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > apps/readest-app/.env.local
           echo "NEXT_PUBLIC_BIBLO_API_URL=${{ secrets.NEXT_PUBLIC_BIBLO_API_URL }}" >> apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}" >> apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" >> apps/readest-app/.env.local
 
-      - name: Initialize iOS Target
+      - name: Initialize iOS Target & Icons
         run: |
           cd apps/readest-app
           pnpm tauri ios init
+          pnpm tauri icon public/icon.png
 
       - name: Configure iOS ExportOptions
         run: |
@@ -111,7 +116,7 @@ jobs:
               <key>method</key>
               <string>app-store-connect</string>
               <key>teamID</key>
-              <string>9W7R4BWG7X</string>
+              <string>${{ secrets.APPLE_TEAM_ID || '9W7R4BWG7X' }}</string>
               <key>signingStyle</key>
               <string>manual</string>
               <key>signingCertificate</key>
@@ -119,7 +124,7 @@ jobs:
               <key>provisioningProfiles</key>
               <dict>
                   <key>com.biblophile.yomi</key>
-                  <string>Yomi App Store Distribution</string>
+                  <string>${{ secrets.IOS_PROVISION_PROFILE_NAME || 'Yomi App Store Distribution' }}</string>
               </dict>
               <key>uploadBitcode</key>
               <false/>
@@ -142,8 +147,14 @@ jobs:
         run: |
           cd apps/readest-app
           pnpm run build-ios-appstore
-          bash scripts/fix-ios-appstore-appgroup.sh src-tauri/gen/apple/build/arm64/Readest.ipa
-          bash scripts/verify-ios-appstore-entitlements.sh src-tauri/gen/apple/build/arm64/Readest.ipa
+          IPA_PATH=$(find src-tauri/gen/apple/build/arm64 -name "*.ipa" | head -n 1)
+          if [ -z "$IPA_PATH" ]; then
+            echo "::error::No IPA found in src-tauri/gen/apple/build/arm64"
+            exit 1
+          fi
+          echo "Found IPA: $IPA_PATH"
+          bash scripts/fix-ios-appstore-appgroup.sh "$IPA_PATH"
+          bash scripts/verify-ios-appstore-entitlements.sh "$IPA_PATH"
 
       - name: Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
@@ -156,8 +167,13 @@ jobs:
       - name: Upload to App Store Connect
         run: |
           cd apps/readest-app
+          IPA_PATH=$(find src-tauri/gen/apple/build/arm64 -name "*.ipa" | head -n 1)
+          if [ -z "$IPA_PATH" ]; then
+            echo "::error::No IPA found to upload"
+            exit 1
+          fi
           pnpm exec dotenv -e .env.ios-appstore.local -- bash -c \
-            'xcrun altool --upload-app --type ios --file src-tauri/gen/apple/build/arm64/Readest.ipa --apiKey $APPLE_API_KEY --apiIssuer $APPLE_API_ISSUER'
+            "xcrun altool --upload-app --type ios --file \"$IPA_PATH\" --apiKey \$APPLE_API_KEY --apiIssuer \$APPLE_API_ISSUER"
 
   # ==========================================
   # Android Google Play Build & Deploy Job
@@ -223,14 +239,18 @@ jobs:
         run: |
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > apps/readest-app/.env.local
           echo "NEXT_PUBLIC_BIBLO_API_URL=${{ secrets.NEXT_PUBLIC_BIBLO_API_URL }}" >> apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}" >> apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" >> apps/readest-app/.env.local
 
       - name: Initialize Android Target & Keystore
         run: |
           cd apps/readest-app
           rm -rf src-tauri/gen/android
           pnpm tauri android init
-          pnpm tauri icon ../../data/icons/readest-book.png
           git checkout .
+          pnpm tauri icon public/icon.png
 
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > src-tauri/gen/android/keystore.properties
           echo "password=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> src-tauri/gen/android/keystore.properties

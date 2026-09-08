@@ -25,7 +25,11 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 unzip -q "$IPA" -d "$WORK"
-APP="$WORK/Payload/Readest.app"
+APP="$(find "$WORK/Payload" -mindepth 1 -maxdepth 1 -name "*.app" | head -n 1)"
+if [ -z "$APP" ] || [ ! -d "$APP" ]; then
+  echo "verify-ios-appstore-entitlements: No .app found in Payload" >&2
+  exit 1
+fi
 
 fail=0
 for ext in "${EXTS[@]}"; do
