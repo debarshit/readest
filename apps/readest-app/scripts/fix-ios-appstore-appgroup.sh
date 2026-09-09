@@ -69,7 +69,9 @@ resign_with_group() {
 # Sign the inner extensions first, then re-seal the containing app bundle so its
 # nested-code seal covers the new extension signatures.
 for ext in "${EXTS[@]}"; do
-  resign_with_group "$APP/PlugIns/$ext.appex" "$ext"
+  if [ -d "$APP/PlugIns/$ext.appex" ]; then
+    resign_with_group "$APP/PlugIns/$ext.appex" "$ext"
+  fi
 done
 APP_NAME="$(basename "$APP" .app)"
 resign_with_group "$APP" "$APP_NAME"

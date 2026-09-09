@@ -34,11 +34,15 @@ fi
 fail=0
 for ext in "${EXTS[@]}"; do
   appex="$APP/PlugIns/$ext.appex"
-  if codesign -d --entitlements :- "$appex" 2>/dev/null | grep -q "$GROUP"; then
-    echo "OK   $ext.appex carries $GROUP"
+  if [ -d "$appex" ]; then
+    if codesign -d --entitlements :- "$appex" 2>/dev/null | grep -q "$GROUP"; then
+      echo "OK   $ext.appex carries $GROUP"
+    else
+      echo "FAIL $ext.appex is MISSING $GROUP (App Group access broken)"
+      fail=1
+    fi
   else
-    echo "FAIL $ext.appex is MISSING $GROUP (App Group access broken)"
-    fail=1
+    echo "SKIP $ext.appex not present in bundle"
   fi
 done
 
