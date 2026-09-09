@@ -116,43 +116,14 @@ jobs:
           pnpm tauri ios init
           pnpm tauri icon public/icon.png
 
-      - name: Configure iOS ExportOptions
+      - name: Configure iOS ExportOptions & Signing
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID || '9W7R4BWG7X' }}
+          IOS_PROFILE_UUID: ${{ env.IOS_PROFILE_UUID }}
+          BUILD_NUMBER: ${{ github.run_number }}
         run: |
-          cat << EOF > apps/readest-app/src-tauri/gen/apple/ExportOptions.plist
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>app-store-connect</string>
-              <key>teamID</key>
-              <string>${{ secrets.APPLE_TEAM_ID || '9W7R4BWG7X' }}</string>
-              <key>signingStyle</key>
-              <string>manual</string>
-              <key>signingCertificate</key>
-              <string>Apple Distribution</string>
-              <key>provisioningProfiles</key>
-              <dict>
-                  <key>com.biblophile.yomi</key>
-                  <string>${IOS_PROFILE_UUID}</string>
-              </dict>
-              <key>uploadBitcode</key>
-              <false/>
-              <key>compileBitcode</key>
-              <false/>
-          </dict>
-          </plist>
-          EOF
-          sed -i '' 's/^[ ]*//' apps/readest-app/src-tauri/gen/apple/ExportOptions.plist || true
-
-      - name: Auto-increment iOS Build Number (CFBundleVersion)
-        run: |
-          BUILD_NUM=${{ github.run_number }}
-          if [ -f "apps/readest-app/src-tauri/gen/apple/project.yml" ]; then
-            sed -i '' "s/CFBundleVersion: .*/CFBundleVersion: \"$BUILD_NUM\"/" apps/readest-app/src-tauri/gen/apple/project.yml
-            sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER:.*/PRODUCT_BUNDLE_IDENTIFIER: com.biblophile.yomi\n      CODE_SIGN_STYLE: Manual\n      PROVISIONING_PROFILE_SPECIFIER: \"${IOS_PROFILE_UUID}\"\n      CODE_SIGN_IDENTITY: \"Apple Distribution\"/" apps/readest-app/src-tauri/gen/apple/project.yml
-            (cd apps/readest-app/src-tauri/gen/apple && env -u FORCE_COLOR xcodegen generate)
-          fi
+          cd apps/readest-app
+          bash scripts/configure-ios-signing.sh
 
       - name: Build iOS Production Bundle (.ipa)
         env:
@@ -272,34 +243,7 @@ jobs:
           echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> src-tauri/gen/android/keystore.properties
           echo "storeFile=$GITHUB_WORKSPACE/apps/readest-app/release.keystore" >> src-tauri/gen/android/keystore.properties
 
-          APP_GRADLE="src-tauri/gen/android/app/build.gradle.kts"
-          cat << 'EOF' >> "$APP_GRADLE"
-
-val ksFile = rootProject.file("keystore.properties")
-val ksProps = java.util.Properties()
-if (ksFile.exists()) {
-    ksFile.inputStream().use { ksProps.load(it) }
-}
-
-android {
-    signingConfigs {
-        create("release") {
-            keyAlias = ksProps.getProperty("keyAlias")
-            keyPassword = ksProps.getProperty("keyPassword")
-            val sf = ksProps.getProperty("storeFile")
-            if (sf != null) {
-                storeFile = file(sf)
-            }
-            storePassword = ksProps.getProperty("password")
-        }
-    }
-    buildTypes {
-        getByName("release") {
-            signingConfig = signingConfigs.getByName("release")
-        }
-    }
-}
-EOF
+          bash scripts/configure-android-signing.sh
 
       - name: Build Android Production App Bundle (.aab)
         env:
