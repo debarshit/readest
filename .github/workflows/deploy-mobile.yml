@@ -68,7 +68,14 @@ jobs:
           # 1. Install Provisioning Profile
           PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROFILES_DIR"
-          echo "$PROVISION_PROFILE_BASE64" | base64 --decode > "$PROFILES_DIR/Yomi_AppStore.mobileprovision"
+          echo "$PROVISION_PROFILE_BASE64" | base64 --decode > "$PROFILES_DIR/profile.mobileprovision"
+          PROFILE_UUID=$(security cms -D -i "$PROFILES_DIR/profile.mobileprovision" | plutil -extract UUID raw - 2>/dev/null || echo "")
+          PROFILE_NAME=$(security cms -D -i "$PROFILES_DIR/profile.mobileprovision" | plutil -extract Name raw - 2>/dev/null || echo "")
+          if [ -n "$PROFILE_UUID" ]; then
+            cp "$PROFILES_DIR/profile.mobileprovision" "$PROFILES_DIR/$PROFILE_UUID.mobileprovision"
+            echo "IOS_PROFILE_UUID=$PROFILE_UUID" >> $GITHUB_ENV
+            echo "Installed provisioning profile with UUID: $PROFILE_UUID (Name: $PROFILE_NAME)"
+          fi
 
           # 2. Setup Keychain and import Distribution Certificate
           if [ -n "$BUILD_CERTIFICATE_BASE64" ]; then
@@ -111,7 +118,7 @@ jobs:
 
       - name: Configure iOS ExportOptions
         run: |
-          cat << 'EOF' > apps/readest-app/src-tauri/gen/apple/ExportOptions.plist
+          cat << EOF > apps/readest-app/src-tauri/gen/apple/ExportOptions.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -127,7 +134,7 @@ jobs:
               <key>provisioningProfiles</key>
               <dict>
                   <key>com.biblophile.yomi</key>
-                  <string>${{ secrets.IOS_PROVISION_PROFILE_NAME || 'Yomi App Store Distribution' }}</string>
+                  <string>${IOS_PROFILE_UUID}</string>
               </dict>
               <key>uploadBitcode</key>
               <false/>
@@ -143,7 +150,7 @@ jobs:
           BUILD_NUM=${{ github.run_number }}
           if [ -f "apps/readest-app/src-tauri/gen/apple/project.yml" ]; then
             sed -i '' "s/CFBundleVersion: .*/CFBundleVersion: \"$BUILD_NUM\"/" apps/readest-app/src-tauri/gen/apple/project.yml
-            sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER:.*/PRODUCT_BUNDLE_IDENTIFIER: com.biblophile.yomi\n      CODE_SIGN_STYLE: Manual/' apps/readest-app/src-tauri/gen/apple/project.yml
+            sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER:.*/PRODUCT_BUNDLE_IDENTIFIER: com.biblophile.yomi\n      CODE_SIGN_STYLE: Manual\n      PROVISIONING_PROFILE_SPECIFIER: \"${IOS_PROFILE_UUID}\"\n      CODE_SIGN_IDENTITY: \"Apple Distribution\"/" apps/readest-app/src-tauri/gen/apple/project.yml
             (cd apps/readest-app/src-tauri/gen/apple && env -u FORCE_COLOR xcodegen generate)
           fi
 
@@ -265,16 +272,45 @@ jobs:
           echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> src-tauri/gen/android/keystore.properties
           echo "storeFile=$GITHUB_WORKSPACE/apps/readest-app/release.keystore" >> src-tauri/gen/android/keystore.properties
 
+          APP_GRADLE="src-tauri/gen/android/app/build.gradle.kts"
+          cat << 'EOF' >> "$APP_GRADLE"
+
+val ksFile = rootProject.file("keystore.properties")
+val ksProps = java.util.Properties()
+if (ksFile.exists()) {
+    ksFile.inputStream().use { ksProps.load(it) }
+}
+
+android {
+    signingConfigs {
+        create("release") {
+            keyAlias = ksProps.getProperty("keyAlias")
+            keyPassword = ksProps.getProperty("keyPassword")
+            val sf = ksProps.getProperty("storeFile")
+            if (sf != null) {
+                storeFile = file(sf)
+            }
+            storePassword = ksProps.getProperty("password")
+        }
+    }
+    buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+}
+EOF
+
       - name: Build Android Production App Bundle (.aab)
         env:
-          ORG_GRADLE_PROJECT_storeFlavor: googleplay
+          STORE_FLAVOR: googleplay
         run: |
           export NDK_HOME="${ANDROID_HOME}/ndk/28.2.13676358"
           cd apps/readest-app
           if grep -q 'REQUEST_INSTALL_PACKAGES' src-tauri/gen/android/app/src/main/AndroidManifest.xml; then
             sed -i '/REQUEST_INSTALL_PACKAGES/d' src-tauri/gen/android/app/src/main/AndroidManifest.xml
           fi
-          pnpm tauri android build --aab
+          pnpm tauri android build --aab -t aarch64 -t armv7 -t x86_64
 
       - name: Upload Android AAB Artifact
         uses: actions/upload-artifact@v4

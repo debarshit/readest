@@ -35,19 +35,18 @@ android {
         ?: System.getenv("STORE_FLAVOR")?.takeIf { it.isNotEmpty() }
         ?: "foss"
 
-    flavorDimensions += "store"
-    productFlavors {
-        create(storeFlavor) {
-            dimension = "store"
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src/main/java", "src/$storeFlavor/java")
         }
     }
 }
 
 dependencies {
     if (storeFlavor == "googleplay") {
-        "googleplayImplementation"("com.android.billingclient:billing:9.1.0")
-        "googleplayImplementation"("com.google.android.gms:play-services-base:18.5.0")
-        "googleplayImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+        implementation("com.android.billingclient:billing:9.1.0")
+        implementation("com.google.android.gms:play-services-base:18.5.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
     }
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
