@@ -96,6 +96,10 @@ jobs:
             echo "storeFile=$RUNNER_TEMP/release.keystore" >> src-tauri/gen/android/keystore.properties
 
             bash scripts/configure-android-signing.sh
+
+            echo "==> Keystore Certificate Fingerprints (for assetlinks.json):"
+            keytool -list -v -keystore "$RUNNER_TEMP/release.keystore" \
+              -storepass "${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" 2>/dev/null | grep -E "(SHA256:|Certificate fingerprints:)" || true
           fi
 
       - name: Build Android APK

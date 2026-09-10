@@ -245,6 +245,10 @@ jobs:
 
           bash scripts/configure-android-signing.sh
 
+          echo "==> Keystore Certificate Fingerprints (for assetlinks.json):"
+          keytool -list -v -keystore "$GITHUB_WORKSPACE/apps/readest-app/release.keystore" \
+            -storepass "${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" 2>/dev/null | grep -E "(SHA256:|Certificate fingerprints:)" || true
+
       - name: Build Android Production App Bundle (.aab)
         env:
           STORE_FLAVOR: googleplay

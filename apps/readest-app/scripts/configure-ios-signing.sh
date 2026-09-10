@@ -58,13 +58,47 @@ if [ -f "src-tauri/gen/apple/project.yml" ]; then
     (cd src-tauri/gen/apple && env -u FORCE_COLOR xcodegen generate)
 fi
 
-# 3. Strip com.apple.developer.associated-domains from entitlements to align with provisioning profile
-for ent in $(find src-tauri/gen/apple -name "*.entitlements" 2>/dev/null); do
-    echo "==> Checking $ent for com.apple.developer.associated-domains"
-    if /usr/libexec/PlistBuddy -c "Print :com.apple.developer.associated-domains" "$ent" >/dev/null 2>&1; then
-        echo "    Removing com.apple.developer.associated-domains from $ent to match provisioning profile"
-        /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.associated-domains" "$ent" || true
+# 3. Handle com.apple.developer.associated-domains in entitlements
+HAS_ASSOC_DOMAINS=false
+PROFILES_DIR="${HOME}/Library/MobileDevice/Provisioning Profiles"
+PROFILE_TO_CHECK=""
+
+if [ -n "${IOS_PROFILE_UUID:-}" ] && [ -f "$PROFILES_DIR/${IOS_PROFILE_UUID}.mobileprovision" ]; then
+    PROFILE_TO_CHECK="$PROFILES_DIR/${IOS_PROFILE_UUID}.mobileprovision"
+elif [ -f "$PROFILES_DIR/profile.mobileprovision" ]; then
+    PROFILE_TO_CHECK="$PROFILES_DIR/profile.mobileprovision"
+elif [ -d "$PROFILES_DIR" ]; then
+    PROFILE_TO_CHECK="$(find "$PROFILES_DIR" -name "*.mobileprovision" | head -n 1 || true)"
+fi
+
+if [ -n "$PROFILE_TO_CHECK" ] && [ -f "$PROFILE_TO_CHECK" ]; then
+    echo "==> Inspecting provisioning profile: $PROFILE_TO_CHECK"
+    if security cms -D -i "$PROFILE_TO_CHECK" 2>/dev/null | grep -q "com.apple.developer.associated-domains"; then
+        HAS_ASSOC_DOMAINS=true
     fi
-done
+fi
+
+if [ "$HAS_ASSOC_DOMAINS" = true ]; then
+    echo "==> Provisioning profile includes com.apple.developer.associated-domains; ensuring Universal Links entitlement"
+    for ent in $(find src-tauri/gen/apple -name "*.entitlements" 2>/dev/null); do
+        if ! /usr/libexec/PlistBuddy -c "Print :com.apple.developer.associated-domains" "$ent" >/dev/null 2>&1; then
+            echo "    Adding com.apple.developer.associated-domains to $ent"
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.associated-domains array" "$ent" || true
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.associated-domains: string applinks:biblophile.com" "$ent" || true
+        else
+            echo "    Entitlements already has com.apple.developer.associated-domains in $ent"
+        fi
+    done
+else
+    echo "==> NOTICE: Provisioning profile does NOT include com.apple.developer.associated-domains"
+    echo "    (To enable iOS Universal Links, enable 'Associated Domains' on com.biblophile.yomi in Apple Developer Portal and update IOS_PROVISIONING_PROFILE_BASE64)"
+    echo "    Stripping com.apple.developer.associated-domains from entitlements to prevent xcodebuild code signing mismatch"
+    for ent in $(find src-tauri/gen/apple -name "*.entitlements" 2>/dev/null); do
+        if /usr/libexec/PlistBuddy -c "Print :com.apple.developer.associated-domains" "$ent" >/dev/null 2>&1; then
+            echo "    Removing com.apple.developer.associated-domains from $ent"
+            /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.associated-domains" "$ent" || true
+        fi
+    done
+fi
 
 echo "==> iOS Signing configuration complete"

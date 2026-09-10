@@ -13,11 +13,15 @@ if grep -q 'signingConfigs.getByName("release")' "$APP_GRADLE"; then
   exit 0
 fi
 
+if ! grep -q 'import java.util.Properties' "$APP_GRADLE"; then
+  (echo "import java.util.Properties"; cat "$APP_GRADLE") > "$APP_GRADLE.tmp" && mv "$APP_GRADLE.tmp" "$APP_GRADLE"
+fi
+
 echo "Appending release signing configuration to $APP_GRADLE"
 cat << 'EOF' >> "$APP_GRADLE"
 
 val ksFile = rootProject.file("keystore.properties")
-val ksProps = java.util.Properties()
+val ksProps = Properties()
 if (ksFile.exists()) {
     ksFile.inputStream().use { ksProps.load(it) }
 }
