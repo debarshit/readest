@@ -3,6 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val storeFlavor = (project.findProperty("storeFlavor") as? String)?.takeIf { it.isNotEmpty() }
+    ?: System.getenv("STORE_FLAVOR")?.takeIf { it.isNotEmpty() }
+    ?: "foss"
+
 android {
     namespace = "com.readest.native_bridge"
     compileSdk = 36
@@ -30,10 +34,6 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
-
-    val storeFlavor = (project.findProperty("storeFlavor") as? String)?.takeIf { it.isNotEmpty() }
-        ?: System.getenv("STORE_FLAVOR")?.takeIf { it.isNotEmpty() }
-        ?: "foss"
 
     sourceSets {
         getByName("main") {
