@@ -81,29 +81,31 @@ jobs:
           cd apps/readest-app
           rm -rf src-tauri/gen/android
           pnpm tauri android init
-          git checkout .
           pnpm tauri icon public/icon.png
 
       - name: Configure Keystore (for Release builds)
         if: ${{ inputs.build_type == 'release' }}
         run: |
+          cd apps/readest-app
           KEYSTORE_BASE64="${{ secrets.ANDROID_KEYSTORE_BASE64 || secrets.ANDROID_KEY_BASE64 }}"
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 --decode > $RUNNER_TEMP/release.keystore
-            echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > apps/readest-app/src-tauri/gen/android/keystore.properties
-            echo "password=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> apps/readest-app/src-tauri/gen/android/keystore.properties
-            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> apps/readest-app/src-tauri/gen/android/keystore.properties
-            echo "storeFile=$RUNNER_TEMP/release.keystore" >> apps/readest-app/src-tauri/gen/android/keystore.properties
+            echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > src-tauri/gen/android/keystore.properties
+            echo "password=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> src-tauri/gen/android/keystore.properties
+            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}" >> src-tauri/gen/android/keystore.properties
+            echo "storeFile=$RUNNER_TEMP/release.keystore" >> src-tauri/gen/android/keystore.properties
+
+            bash scripts/configure-android-signing.sh
           fi
 
       - name: Build Android APK
         run: |
           export NDK_HOME="${ANDROID_HOME}/ndk/28.2.13676358"
           cd apps/readest-app
-          EXTRA_FLAGS=""
+          EXTRA_FLAGS="--apk"
           BUILD_SUBDIR="release"
           if [ "${{ inputs.build_type }}" == "debug" ]; then
-            EXTRA_FLAGS="--debug"
+            EXTRA_FLAGS="--apk --debug"
             BUILD_SUBDIR="debug"
           fi
 
@@ -115,20 +117,27 @@ jobs:
             pnpm tauri android build $EXTRA_FLAGS
           elif [ "$TARGET" == "aarch64 (arm64)" ]; then
             pnpm tauri android build -t aarch64 $EXTRA_FLAGS
+            cp "${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk" "${OUTPUT_DIR}/app-arm64-${BUILD_SUBDIR}.apk" 2>/dev/null || true
           elif [ "$TARGET" == "all" ]; then
+            # 1. Build universal APK
             pnpm tauri android build $EXTRA_FLAGS
-            cp ${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk ${OUTPUT_DIR}/app-universal-built.apk || true
+            cp "${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk" "${OUTPUT_DIR}/app-universal-built.apk" || true
 
+            # 2. Build arm64 (aarch64) APK
             pnpm tauri android build -t aarch64 $EXTRA_FLAGS
-            cp ${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk ${OUTPUT_DIR}/app-arm64-${BUILD_SUBDIR}.apk || true
+            cp "${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk" "${OUTPUT_DIR}/app-arm64-${BUILD_SUBDIR}.apk" || true
 
+            # 3. Build armv7 APK
             pnpm tauri android build -t armv7 $EXTRA_FLAGS
-            cp ${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk ${OUTPUT_DIR}/app-armv7-${BUILD_SUBDIR}.apk || true
+            cp "${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk" "${OUTPUT_DIR}/app-armv7-${BUILD_SUBDIR}.apk" || true
 
+            # 4. Build x86_64 APK
             pnpm tauri android build -t x86_64 $EXTRA_FLAGS
-            cp ${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk ${OUTPUT_DIR}/app-x86_64-${BUILD_SUBDIR}.apk || true
+            cp "${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk" "${OUTPUT_DIR}/app-x86_64-${BUILD_SUBDIR}.apk" || true
 
-            cp ${OUTPUT_DIR}/app-universal-built.apk ${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk || true
+            # Restore original universal APK
+            cp "${OUTPUT_DIR}/app-universal-built.apk" "${OUTPUT_DIR}/app-universal-${BUILD_SUBDIR}.apk" || true
+            rm -f "${OUTPUT_DIR}/app-universal-built.apk"
           fi
 
       - name: Upload Android APK Artifacts

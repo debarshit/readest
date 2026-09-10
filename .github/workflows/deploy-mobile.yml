@@ -90,7 +90,8 @@ jobs:
 
             security import "$CERTIFICATE_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
             security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-            security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed -e s/\"//g)
+            security default-keychain -s "$KEYCHAIN_PATH"
+            security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed -e s/\"//g)
           fi
 
       - name: Install Node Dependencies
@@ -235,7 +236,6 @@ jobs:
           cd apps/readest-app
           rm -rf src-tauri/gen/android
           pnpm tauri android init
-          git checkout .
           pnpm tauri icon public/icon.png
 
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > src-tauri/gen/android/keystore.properties
@@ -248,6 +248,7 @@ jobs:
       - name: Build Android Production App Bundle (.aab)
         env:
           STORE_FLAVOR: googleplay
+          ORG_GRADLE_PROJECT_storeFlavor: googleplay
         run: |
           export NDK_HOME="${ANDROID_HOME}/ndk/28.2.13676358"
           cd apps/readest-app

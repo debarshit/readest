@@ -34,6 +34,10 @@ cat << EOF > src-tauri/gen/apple/ExportOptions.plist
     <false/>
     <key>compileBitcode</key>
     <false/>
+    <key>uploadSymbols</key>
+    <true/>
+    <key>manageAppVersionAndBuildNumber</key>
+    <false/>
 </dict>
 </plist>
 EOF
@@ -53,5 +57,14 @@ if [ -f "src-tauri/gen/apple/project.yml" ]; then
     fi
     (cd src-tauri/gen/apple && env -u FORCE_COLOR xcodegen generate)
 fi
+
+# 3. Strip com.apple.developer.associated-domains from entitlements to align with provisioning profile
+for ent in $(find src-tauri/gen/apple -name "*.entitlements" 2>/dev/null); do
+    echo "==> Checking $ent for com.apple.developer.associated-domains"
+    if /usr/libexec/PlistBuddy -c "Print :com.apple.developer.associated-domains" "$ent" >/dev/null 2>&1; then
+        echo "    Removing com.apple.developer.associated-domains from $ent to match provisioning profile"
+        /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.associated-domains" "$ent" || true
+    fi
+done
 
 echo "==> iOS Signing configuration complete"
