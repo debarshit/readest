@@ -22,7 +22,7 @@ jobs:
   # ==========================================
   deploy-ios:
     name: Build & Deploy iOS (.ipa)
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
