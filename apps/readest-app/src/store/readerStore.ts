@@ -28,6 +28,7 @@ import { getBaseFilename } from '@/utils/path';
 import { SUPPORTED_LANGNAMES } from '@/services/constants';
 import { useSettingsStore } from './settingsStore';
 import { BookData, useBookDataStore } from './bookDataStore';
+import { trackReaderBookOpened, captureEvent } from '@/utils/telemetry';
 import { useLibraryStore } from './libraryStore';
 import { clearBookProgress, getBookProgress, setBookProgress } from './readerProgressStore';
 import { uniqueId } from '@/utils/misc';
@@ -369,6 +370,29 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           [id]: newBookData,
         },
       }));
+      try {
+        const bookTitle =
+          typeof book.title === 'string'
+            ? book.title
+            : typeof bookDoc.metadata?.title === 'string'
+              ? bookDoc.metadata.title
+              : undefined;
+        const bookAuthor =
+          typeof book.author === 'string'
+            ? book.author
+            : typeof (bookDoc.metadata as any)?.author === 'string'
+              ? (bookDoc.metadata as any).author
+              : undefined;
+
+        trackReaderBookOpened({
+          id,
+          title: bookTitle,
+          format: book.format,
+          author: bookAuthor,
+        });
+      } catch (e) {
+        // Telemetry failure should never affect reader initialization
+      }
       const configViewSettings = config.viewSettings!;
       const globalViewSettings = settings.globalViewSettings;
       set((state) => ({
@@ -488,6 +512,11 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       }
       if (progressPercentage >= 100 && existingBook.readingStatus !== 'finished') {
         newReadingStatus = 'finished';
+        captureEvent('reading_status_updated', {
+          book_id: id,
+          status: 'finished',
+          app_name: 'yomi',
+        });
       }
       updateBookProgress(id, progress, newReadingStatus);
     }

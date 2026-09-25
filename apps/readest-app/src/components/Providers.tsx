@@ -23,7 +23,6 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { getAndroidPatchedViewportContent } from '@/utils/viewport';
 import {
   getTelemetryDecision,
-  rollIntoTelemetryPromptBucket,
   setTelemetryDecision,
   TELEMETRY_OPT_OUT_KEY,
 } from '@/utils/telemetry';
@@ -87,21 +86,13 @@ const finalizeTelemetryDecision = ({
     return;
   }
 
-  // Brand-new user. Default to opt-out for privacy; ask only the prompt
-  // bucket so the rest get a friction-free first launch.
-  if (rollIntoTelemetryPromptBucket()) {
-    setTelemetryDecision('pending');
-    onShowPrompt();
-  } else {
-    localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'true');
-    posthog.opt_out_capturing();
-    setTelemetryDecision('opt-out');
-    // Persist the off-by-default to the settings file directly. The settings
-    // store isn't seeded yet at this point in boot, so saveSysSettings would
-    // write a malformed partial object — write through appService instead.
-    settings.telemetryEnabled = false;
-    void appService.saveSettings(settings);
-  }
+  // Brand-new user: default to opt-in for unified ecosystem tracking.
+  // The user can still opt out at any time in Settings.
+  localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'false');
+  posthog.opt_in_capturing();
+  setTelemetryDecision('opt-in');
+  settings.telemetryEnabled = true;
+  void appService.saveSettings(settings);
 };
 
 const Providers = ({ children }: { children: React.ReactNode }) => {

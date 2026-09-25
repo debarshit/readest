@@ -1,6 +1,9 @@
 import Image from 'next/image';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import posthog from 'posthog-js';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getOSPlatform } from '@/utils/misc';
+import { trackYomiSignupClicked } from '@/utils/telemetry';
 import EmailPasswordAuth from './EmailPasswordAuth';
 
 const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
@@ -18,6 +21,23 @@ export default function AuthPanel({
   magicLink = false,
 }: AuthPanelProps) {
   const _ = useTranslation();
+
+  const getSignupUrl = () => {
+    try {
+      const osPlatform = getOSPlatform();
+      const distinctId = typeof window !== 'undefined' ? posthog.get_distinct_id() : '';
+      const params = new URLSearchParams({
+        source: 'yomi',
+        from_platform: osPlatform,
+      });
+      if (distinctId) {
+        params.set('yomi_id', distinctId);
+      }
+      return `https://biblophile.com/signupLogin?${params.toString()}`;
+    } catch {
+      return 'https://biblophile.com/signupLogin?source=yomi';
+    }
+  };
 
   return (
     <div className='flex w-full max-w-sm flex-col items-center gap-6'>
@@ -39,9 +59,10 @@ export default function AuthPanel({
           <p className='text-base-content/50 mt-2 text-xs'>
             {_("Don't have an account?")}{' '}
             <a
-              href='https://biblophile.com'
+              href={getSignupUrl()}
               target='_blank'
               rel='noopener noreferrer'
+              onClick={() => trackYomiSignupClicked(getOSPlatform())}
               className='underline underline-offset-2 hover:text-base-content transition-colors'
             >
               {_('Sign up on Biblophile')}

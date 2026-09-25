@@ -53,7 +53,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
     if (newUser.id) {
-      posthog.identify(newUser.id);
+      posthog.identify(newUser.id, {
+        email: newUser.email,
+        name: newUser.user_metadata?.full_name || newUser.user_metadata?.name,
+        username: newUser.user_metadata?.name,
+        yomi_last_login: new Date().toISOString(),
+      });
     }
   }, []);
 
@@ -64,6 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       console.warn('Supabase sign-out failed:', e);
     } finally {
+      posthog.reset();
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
@@ -116,7 +122,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setToken(session.access_token);
           localStorage.setItem('token', session.access_token);
         }
+        if (userData.id) {
+          posthog.identify(userData.id, {
+            email: userData.email,
+            name: userData.user_metadata?.full_name || userData.user_metadata?.name,
+            username: userData.user_metadata?.name,
+          });
+        }
       } else if (_event === 'SIGNED_OUT') {
+        posthog.reset();
         setUser(null);
         setToken(null);
         localStorage.removeItem('user');
