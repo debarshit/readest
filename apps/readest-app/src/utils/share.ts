@@ -36,8 +36,11 @@ export const parseShareDeepLink = (url: string): ShareDeepLink | null => {
     return isValidToken(token) ? { token } : null;
   }
   if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
-    if (!isWebReadestHost(parsed.host)) return null;
+    if (!isWebYomiHost(parsed.host)) return null;
     const segments = parsed.pathname.split('/').filter(Boolean);
+    if (segments[0] === 'yomi') {
+      segments.shift();
+    }
     if (segments.length !== 2 || segments[0] !== 's') return null;
     const token = segments[1]!;
     return isValidToken(token) ? { token } : null;
@@ -111,12 +114,16 @@ export const shareSelectedText = async (
   await writeTextToClipboard(text);
 };
 
-const isWebReadestHost = (host: string): boolean => {
-  // Matches the production host and any preview domain Readest may serve from.
-  // Conservative: accepts only the exact production host or a *.readest.com
-  // subdomain so a third-party site cannot impersonate a share URL.
+const isWebYomiHost = (host: string): boolean => {
+  // Matches the production host and any preview domain Yomi/Biblophile may serve from.
   try {
     if (host === new URL(READEST_WEB_BASE_URL).host) return true;
   } catch {}
-  return host.endsWith('.biblophile.com') || host.endsWith('.readest.com');
+  return (
+    host === 'biblophile.com' ||
+    host.endsWith('.biblophile.com') ||
+    host === 'web.readest.com' ||
+    host.endsWith('.readest.com')
+  );
 };
+export const isWebReadestHost = isWebYomiHost;

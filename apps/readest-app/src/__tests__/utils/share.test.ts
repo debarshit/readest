@@ -21,6 +21,12 @@ describe('parseShareDeepLink', () => {
     expect(parseShareDeepLink(`readest://share/${VALID_TOKEN}`)).toEqual({ token: VALID_TOKEN });
   });
 
+  it('parses https://biblophile.com/yomi/s/{token}', () => {
+    expect(parseShareDeepLink(`https://biblophile.com/yomi/s/${VALID_TOKEN}`)).toEqual({
+      token: VALID_TOKEN,
+    });
+  });
+
   it('parses https://web.readest.com/s/{token}', () => {
     expect(parseShareDeepLink(`https://web.readest.com/s/${VALID_TOKEN}`)).toEqual({
       token: VALID_TOKEN,

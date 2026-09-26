@@ -6,7 +6,8 @@ import { webDownload } from '@/utils/transfer';
 import { GlossIndex } from './glossIndex';
 import type { GlossIndexData } from './types';
 
-export const WORDLENS_CDN_BASE = 'https://cdn.readest.com/wordlens';
+export const WORDLENS_CDN_BASE =
+  process.env['NEXT_PUBLIC_WORDLENS_CDN_BASE'] || 'https://cdn.biblophile.com/yomi/wordlens';
 const STORE_DIR = 'wordlens'; // relative dir under BaseDir 'Data'
 const MANIFEST_FILE = 'manifest.json';
 

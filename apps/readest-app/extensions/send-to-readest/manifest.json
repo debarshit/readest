@@ -30,6 +30,8 @@
   "content_scripts": [
     {
       "matches": [
+        "https://biblophile.com/*",
+        "https://*.biblophile.com/*",
         "https://web.readest.com/*",
         "https://*.readest.com/*",
         "http://localhost:3000/*"

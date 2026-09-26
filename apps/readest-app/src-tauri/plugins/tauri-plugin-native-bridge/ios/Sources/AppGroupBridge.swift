@@ -7,7 +7,7 @@
 import Foundation
 
 enum AppGroupBridge {
-  static let suiteName = "group.com.biblophile.readest"
+  static let suiteName = "group.com.biblophile.yomi"
   static let groupsKey = "shareExtensionGroups"
   static let defaultGroupNameKey = "shareExtensionDefaultGroupName"
   static let pendingSavesKey = "shareExtensionPendingSaves"

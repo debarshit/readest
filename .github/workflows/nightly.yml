@@ -403,7 +403,7 @@ jobs:
           release="${{ matrix.config.release }}"
           arch="${{ matrix.config.arch }}"
           rust_target="${{ matrix.config.rust_target }}"
-          base_url="https://download.readest.com/nightly/${version}"
+          base_url="https://biblophile.com/yomi/download/nightly/${version}"
           out="$PWD/nightly-out"
           frag_dir="$out/frag"
           mkdir -p "$out" "$frag_dir"
@@ -503,7 +503,7 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ needs.compute-version.outputs.nightly_version }}"
-          base="r2:readest-releases/nightly/${version}"
+          base="r2:yomi-releases/nightly/${version}"
           out="$PWD/nightly-out"
           # Artifacts (exclude the local frag/ scratch dir).
           rclone copy "$out" "$base/" --exclude "frag/**"
@@ -572,8 +572,8 @@ jobs:
           version="${{ needs.compute-version.outputs.nightly_version }}"
           mkdir -p koplugin-out
           mv "Readest-${version}-1.koplugin.zip" koplugin-out/
-          rclone copy koplugin-out "r2:readest-releases/nightly/${version}/"
-          echo "uploaded https://download.readest.com/nightly/${version}/Readest-${version}-1.koplugin.zip"
+          rclone copy koplugin-out "r2:yomi-releases/nightly/${version}/"
+          echo "uploaded https://biblophile.com/yomi/download/nightly/${version}/Readest-${version}-1.koplugin.zip"
 
   assemble-manifest:
     needs: [compute-version, build]
@@ -600,7 +600,7 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ needs.compute-version.outputs.nightly_version }}"
-          base="r2:readest-releases/nightly"
+          base="r2:yomi-releases/nightly"
 
           # Pull only the fragments that SUCCEEDED legs uploaded.
           rclone copy "$base/${version}/manifest-fragments" ./frag || true
@@ -630,7 +630,7 @@ jobs:
       - name: prune old nightly folders (keep newest 7)
         run: |
           set -euo pipefail
-          base="r2:readest-releases/nightly"
+          base="r2:yomi-releases/nightly"
           # Version dirs are <base>-<YYYYMMDDHH>. Lexicographic order is NOT
           # chronological across a base-version bump (e.g. 0.2.0-* sorts after
           # 0.11.0-*), so sort by the numeric stamp tail (everything after the

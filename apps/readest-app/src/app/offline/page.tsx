@@ -15,7 +15,7 @@ export default function Offline() {
         />
       </div>
 
-      <h1 className='text-2xl font-bold text-gray-800'>Readest</h1>
+      <h1 className='text-2xl font-bold text-gray-800'>Yomi</h1>
 
       <p className='mt-2 text-gray-600'>
         It seems you&apos;re offline. Please check your internet connection and try again.

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>com.biblophile.readest</id>
+  <id>com.biblophile.yomi</id>
 
-  <name>Readest</name>
-  <summary>Modern, feature-rich ebook reader</summary>
+  <name>Yomi</name>
+  <summary>Modern, feature-rich ebook reader by Biblophile</summary>
 
   <description>
-    <p>Readest is a modern, feature-rich ebook reader designed for avid readers offering seamless cross-platform access, powerful tools, and an intuitive interface to elevate your reading experience.</p>
-    <p>Built as a modern rewrite of Foliate, Readest leverages Next.js 15 and Tauri v2 to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.</p>
-    <p>Whether you're analyzing complex texts, immersing yourself in stories, or exploring new ideas, Readest adapts to your needs with powerful features for deep, thoughtful reading.</p>
+    <p>Yomi is a modern, feature-rich ebook reader designed for avid readers offering seamless cross-platform access, powerful tools, and an intuitive interface to elevate your reading experience.</p>
+    <p>Built as a modern rewrite of Foliate, Yomi leverages Next.js 15 and Tauri v2 to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.</p>
+    <p>Whether you're analyzing complex texts, immersing yourself in stories, or exploring new ideas, Yomi adapts to your needs with powerful features for deep, thoughtful reading.</p>
     <p>Key features include:</p>
     <ul>
-      <li>Multi-format support for EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, and PDF (experimental).</li>
+      <li>Multi-format support for EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, and PDF.</li>
       <li>Switch between scrolling or paginated reading modes for your preferred reading style.</li>
       <li>Full-text search across the entire book to find relevant sections quickly.</li>
       <li>Add highlights, bookmarks, and notes to enhance your reading experience and learning.</li>
@@ -23,9 +23,9 @@
       <li>Cross-platform synchronization of book files, reading progress, notes, and bookmarks across all supported platforms.</li>
       <li>Text-to-Speech functionality for a more accessible reading experience.</li>
       <li>Organize, sort, and manage your entire ebook library with advanced library management tools.</li>
-      <li>One-click file association to quickly open files in Readest from your file browser.</li>
+      <li>One-click file association to quickly open files in Yomi from your file browser.</li>
     </ul>
-    <p>Readest also includes custom CSS support for personalized styling, and code syntax highlighting for technical books. The application is designed to honor the legacy of deep reading while embracing modern technology for an enhanced experience.</p>
+    <p>Yomi also includes custom CSS support for personalized styling, and code syntax highlighting for technical books.</p>
   </description>
 
   <categories>
@@ -35,6 +35,7 @@
   </categories>
 
   <keywords>
+    <keyword translate="no">yomi</keyword>
     <keyword translate="no">readest</keyword>
     <keyword>ebook</keyword>
     <keyword>reader</keyword>
@@ -51,13 +52,12 @@
     <keyword>sync</keyword>
   </keywords>
 
-  <url type="homepage">https://github.com/readest/readest</url>
-  <url type="bugtracker">https://github.com/readest/readest/issues</url>
-  <url type="help">https://github.com/readest/readest/wiki</url>
-  <url type="donation">https://github.com/sponsors/readest</url>
-  <url type="vcs-browser">https://github.com/readest/readest</url>
+  <url type="homepage">https://biblophile.com/yomi</url>
+  <url type="bugtracker">https://github.com/debarshit/readest/issues</url>
+  <url type="help">https://biblophile.com/yomi/support</url>
+  <url type="vcs-browser">https://github.com/debarshit/readest</url>
 
-  <launchable type="desktop-id">com.biblophile.readest.desktop</launchable>
+  <launchable type="desktop-id">com.biblophile.yomi.desktop</launchable>
 
   <requires>
     <display_length compare="ge">360</display_length>

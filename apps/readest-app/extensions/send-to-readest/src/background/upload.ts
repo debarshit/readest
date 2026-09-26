@@ -9,7 +9,7 @@
 import type { ClipErrorCode } from '../lib/messages';
 import { translate as _ } from '../lib/i18n';
 
-const DEFAULT_API_BASE = 'https://web.readest.com';
+const DEFAULT_API_BASE = 'https://biblophile.com/yomi';
 const INBOX_FILE_PATH = '/api/send/inbox/file';
 
 /**

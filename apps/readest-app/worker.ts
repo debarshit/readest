@@ -21,7 +21,7 @@ interface ExecutionContextLike {
   waitUntil(promise: Promise<unknown>): void;
 }
 
-const COMPACT_URL = 'https://web.readest.com/api/stats/compact';
+const COMPACT_URL = 'https://biblophile.com/yomi/api/stats/compact';
 
 export default {
   fetch: handler.fetch,

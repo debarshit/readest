@@ -172,6 +172,7 @@ export function useClipUrlIngress() {
         url.startsWith('yomi://clip/') ||
         url.startsWith('readest://clip?') ||
         url.startsWith('readest://clip/') ||
+        /^https:\/\/biblophile\.com\/yomi\/clip(?:[/?].*)?$/i.test(url) ||
         /^https:\/\/web\.readest\.com\/clip(?:[/?].*)?$/i.test(url);
       if (isClipUrl) {
         try {

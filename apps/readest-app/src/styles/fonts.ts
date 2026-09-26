@@ -46,7 +46,8 @@ const hostedCJKFonts = [
   'GuanKiapTsingKhai-T',
 ];
 
-const DEFAULT_FONT_BASE_URL = 'https://storage.readest.com/public/font/dist';
+const DEFAULT_FONT_BASE_URL =
+  process.env['NEXT_PUBLIC_FONT_BASE_URL'] || 'https://cdn.biblophile.com/yomi/fonts/dist';
 
 const getFontBaseUrl = () =>
   (getRuntimeConfig()?.fontBaseUrl || DEFAULT_FONT_BASE_URL).replace(/\/+$/, '');

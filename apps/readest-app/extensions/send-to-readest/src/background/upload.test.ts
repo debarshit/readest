@@ -42,7 +42,7 @@ const sampleArgs = {
 
 describe('resolveUploadEndpoint', () => {
   test('defaults to the production endpoint when no override is set', async () => {
-    expect(await resolveUploadEndpoint()).toBe('https://web.readest.com/api/send/inbox/file');
+    expect(await resolveUploadEndpoint()).toBe('https://biblophile.com/yomi/api/send/inbox/file');
   });
 
   test('honours readestApiBase in chrome.storage.local', async () => {
@@ -57,7 +57,7 @@ describe('resolveUploadEndpoint', () => {
 
   test('ignores readestApiBase when it is not http(s)', async () => {
     await chromeMock.storage.local.set({ readestApiBase: 'javascript:alert(1)' });
-    expect(await resolveUploadEndpoint()).toBe('https://web.readest.com/api/send/inbox/file');
+    expect(await resolveUploadEndpoint()).toBe('https://biblophile.com/yomi/api/send/inbox/file');
   });
 
   test('falls back to default when chrome.storage is unavailable', async () => {
@@ -66,7 +66,7 @@ describe('resolveUploadEndpoint', () => {
     const realStorage = chromeMock.storage;
     (chromeMock as unknown as { storage: undefined }).storage = undefined;
     try {
-      expect(await resolveUploadEndpoint()).toBe('https://web.readest.com/api/send/inbox/file');
+      expect(await resolveUploadEndpoint()).toBe('https://biblophile.com/yomi/api/send/inbox/file');
     } finally {
       (chromeMock as unknown as { storage: typeof realStorage }).storage = realStorage;
     }

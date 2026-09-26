@@ -16,7 +16,7 @@ import {
   isLocalFileUrl,
 } from '../lib/localPage';
 
-const LOGIN_URL = 'https://web.readest.com/';
+const LOGIN_URL = 'https://biblophile.com/yomi';
 
 localizeDom();
 

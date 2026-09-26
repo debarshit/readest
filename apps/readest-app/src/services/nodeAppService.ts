@@ -16,7 +16,8 @@ import {
   LOCAL_IMAGES_SUBDIR,
 } from './constants';
 
-const APP_NAME = 'Readest';
+const APP_NAME = 'Yomi';
+const LEGACY_APP_NAME = 'Readest';
 
 // System directory getters matching Tauri's appDataDir, appConfigDir, etc.
 function getAppDataDir(): string {
@@ -372,6 +373,15 @@ export class NodeAppService extends BaseAppService {
   }
 
   async init(): Promise<void> {
+    try {
+      const appData = getAppDataDir();
+      const legacyData = appData.replace(/Yomi$/, LEGACY_APP_NAME);
+      if (!fs.existsSync(appData) && fs.existsSync(legacyData)) {
+        fs.renameSync(legacyData, appData);
+      }
+    } catch {
+      // Ignore migration errors
+    }
     await this.prepareBooksDir();
   }
 

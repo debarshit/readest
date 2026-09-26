@@ -41,7 +41,8 @@ import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 import { DEFAULT_SENTENCE_GAP_SEC } from './tts/EdgeTTSClient';
 import { DEFAULT_PARAGRAPH_GAP_SEC } from './tts/TTSController';
 
-export const DATA_SUBDIR = 'Readest';
+export const DATA_SUBDIR = 'Yomi';
+export const LEGACY_DATA_SUBDIR = 'Readest';
 export const LOCAL_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
 export const CLOUD_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
 export const CLOUD_REPLICAS_SUBDIR = `${DATA_SUBDIR}/Replicas`;
@@ -913,16 +914,20 @@ export const CJK_FONTS_PATTENS = new RegExp(
 
 export const BOOK_IDS_SEPARATOR = '+';
 
-export const DOWNLOAD_READEST_URL = 'https://biblophile.com/yomi/download?utm_source=yomi_web';
+export const DOWNLOAD_YOMI_URL = 'https://biblophile.com/yomi/download?utm_source=yomi_web';
+export const DOWNLOAD_READEST_URL = DOWNLOAD_YOMI_URL;
 
-export const READEST_WEB_BASE_URL = 'https://biblophile.com/yomi';
-export const READEST_NODE_BASE_URL =
+export const YOMI_WEB_BASE_URL = 'https://biblophile.com/yomi';
+export const READEST_WEB_BASE_URL = YOMI_WEB_BASE_URL;
+
+export const YOMI_NODE_BASE_URL =
   process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'https://api.biblophile.com/api/v0';
+export const READEST_NODE_BASE_URL = YOMI_NODE_BASE_URL;
 
-export const SHARE_BASE_URL = `${READEST_WEB_BASE_URL}/s`;
+export const SHARE_BASE_URL = `${YOMI_WEB_BASE_URL}/s`;
 export const SHARE_EXPIRATION_DAYS = [1, 3, 7] as const;
 
-// Send to Readest — the domain inbound capture emails are addressed to, the
+// Send to Yomi — the domain inbound capture emails are addressed to, the
 // R2 bucket holding raw inbound payloads, and the per-user cap on undrained
 // inbox items (defense against a leaked address).
 export const SEND_EMAIL_DOMAIN = 'biblophile.com';
@@ -942,32 +947,39 @@ export const SHARE_CFI_MAX_LENGTH = 512;
 
 const LATEST_DOWNLOAD_BASE_URL = 'https://biblophile.com/yomi/download/releases';
 
-export const READEST_UPDATER_FILE = `${LATEST_DOWNLOAD_BASE_URL}/latest.json`;
+export const YOMI_UPDATER_FILE = `${LATEST_DOWNLOAD_BASE_URL}/latest.json`;
+export const READEST_UPDATER_FILE = YOMI_UPDATER_FILE;
 
-export const READEST_CHANGELOG_FILE =
+export const YOMI_CHANGELOG_FILE =
   process.env['NEXT_PUBLIC_CHANGELOG_URL'] ||
   (typeof window !== 'undefined' &&
   process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'web' &&
   !process.env['VITEST']
     ? `${process.env['NEXT_PUBLIC_BASE_PATH'] || ''}/api/release-notes`
     : `${LATEST_DOWNLOAD_BASE_URL}/release-notes.json`);
+export const READEST_CHANGELOG_FILE = YOMI_CHANGELOG_FILE;
 
-export const READEST_NIGHTLY_UPDATER_FILE =
+export const YOMI_NIGHTLY_UPDATER_FILE =
   process.env['NEXT_PUBLIC_NIGHTLY_UPDATER_FILE'] ||
-  'https://download.readest.com/nightly/latest.json';
+  'https://biblophile.com/yomi/download/nightly/latest.json';
+export const READEST_NIGHTLY_UPDATER_FILE = YOMI_NIGHTLY_UPDATER_FILE;
 
 // Public (verification) key, identical to src-tauri/tauri.conf.json `updater.pubkey`.
 // Used to verify nightly artifacts in the custom install flows (portable /
 // AppImage / Android). Safe to embed — it is a public key.
-export const READEST_UPDATER_PUBKEY =
+export const YOMI_UPDATER_PUBKEY =
   'dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJFMEQ1QjE2OEU1NEIzNTEKUldSUnMxU09GbHNOdmpEaWFMT1crRFpEV2VORzQ2MklxaFc0M1R0ci9xY2c1bENXS0xhM1R1L2sK';
+export const READEST_UPDATER_PUBKEY = YOMI_UPDATER_PUBKEY;
 
-export const READEST_PUBLIC_STORAGE_BASE_URL = 'https://biblophile.com/yomi/storage';
-// Custom domain serving the readest-public bucket; durable media assets
-// (e.g. published book covers) are linked through this host.
-export const READEST_PUBLIC_ASSETS_BASE_URL = 'https://biblophile.com/yomi/assets';
+export const YOMI_PUBLIC_STORAGE_BASE_URL = 'https://biblophile.com/yomi/storage';
+export const READEST_PUBLIC_STORAGE_BASE_URL = YOMI_PUBLIC_STORAGE_BASE_URL;
 
-export const READEST_OPDS_USER_AGENT = 'Readest/1.0 (OPDS Browser)';
+// Custom domain serving the public assets (e.g. published book covers).
+export const YOMI_PUBLIC_ASSETS_BASE_URL = 'https://biblophile.com/yomi/assets';
+export const READEST_PUBLIC_ASSETS_BASE_URL = YOMI_PUBLIC_ASSETS_BASE_URL;
+
+export const YOMI_OPDS_USER_AGENT = 'Yomi/1.0 (OPDS Browser)';
+export const READEST_OPDS_USER_AGENT = YOMI_OPDS_USER_AGENT;
 
 export const SYNC_PROGRESS_INTERVAL_SEC = 3;
 export const SYNC_NOTES_INTERVAL_SEC = 5;

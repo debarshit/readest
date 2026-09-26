@@ -1,15 +1,15 @@
-name = "readest-send-email"
+name = "yomi-send-email"
 main = "src/index.ts"
 compatibility_date = "2026-04-10"
 compatibility_flags = ["nodejs_compat"]
 
-# Bound to Cloudflare Email Routing on the readest.com zone: the catch-all
+# Bound to Cloudflare Email Routing on the biblophile.com zone: the catch-all
 # rule routes to this Worker, while the existing role addresses (info@,
-# admin@, …) keep their own forward rules. readest.com MX must point to
+# admin@, …) keep their own forward rules. biblophile.com MX must point to
 # Cloudflare.
 
 [vars]
-SEND_EMAIL_DOMAIN = "readest.com"
+SEND_EMAIL_DOMAIN = "biblophile.com"
 # Reject inbound messages larger than this (Cloudflare's own ceiling is
 # ~25-30 MB); senders are pointed at the web /send page instead.
 MAX_MESSAGE_BYTES = "26214400"
@@ -19,7 +19,7 @@ INBOX_PENDING_LIMIT = "50"
 # R2 bucket for raw inbound payloads. Drained, then deleted by the client.
 [[r2_buckets]]
 binding = "INBOX_BUCKET"
-bucket_name = "readest-send-inbox"
+bucket_name = "yomi-send-inbox"
 
 # Secrets (set with `wrangler secret put`):
 #   SUPABASE_URL

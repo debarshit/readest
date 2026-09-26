@@ -639,7 +639,7 @@ pub fn run() {
                 app.emit("single-instance", SingleInstancePayload { args: argv, cwd })
                     .unwrap();
             })
-            .dbus_id("com.biblophile.readest".to_owned())
+            .dbus_id("com.biblophile.yomi".to_owned())
             .build(),
     );
 

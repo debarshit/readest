@@ -5,13 +5,15 @@ import { getOSPlatform } from '@/utils/misc';
 
 declare global {
   interface Window {
+    __YOMI_CLI_ACCESS?: boolean;
     __READEST_CLI_ACCESS?: boolean;
   }
 }
 
 export const isTauriAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
 export const isWebAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'web';
-export const hasCli = () => window.__READEST_CLI_ACCESS === true;
+export const hasCli = () =>
+  window.__YOMI_CLI_ACCESS === true || window.__READEST_CLI_ACCESS === true;
 export const isPWA = () => window.matchMedia('(display-mode: standalone)').matches;
 export const getBaseUrl = () =>
   getRuntimeConfig()?.apiBaseUrl ??

@@ -7,6 +7,7 @@ import {
   writeFile,
   readDir,
   remove,
+  rename,
   copyFile,
   stat,
   BaseDirectory,
@@ -64,6 +65,7 @@ import { DatabaseOpts, DatabaseService } from '@/types/database';
 import { SchemaType } from '@/services/database/migrate';
 import {
   DATA_SUBDIR,
+  LEGACY_DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
   LOCAL_DICTIONARIES_SUBDIR,
   LOCAL_FONTS_SUBDIR,
@@ -76,6 +78,9 @@ declare global {
     __READEST_IS_EINK?: boolean;
     __READEST_IS_APPIMAGE?: boolean;
     __READEST_UPDATER_DISABLED?: boolean;
+    __YOMI_IS_EINK?: boolean;
+    __YOMI_IS_APPIMAGE?: boolean;
+    __YOMI_UPDATER_DISABLED?: boolean;
   }
 }
 
@@ -560,7 +565,7 @@ export const nativeFileSystem: FileSystem = {
   },
 };
 
-const DIST_CHANNEL = (process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'readest') as DistChannel;
+const DIST_CHANNEL = (process.env['NEXT_PUBLIC_DIST_CHANNEL'] || 'yomi') as DistChannel;
 
 export class NativeAppService extends BaseAppService {
   fs = nativeFileSystem;
@@ -574,8 +579,8 @@ export class NativeAppService extends BaseAppService {
   override isWindowsApp = OS_TYPE === 'windows';
   override isMobileApp = ['android', 'ios'].includes(OS_TYPE);
   override isDesktopApp = ['macos', 'windows', 'linux'].includes(OS_TYPE);
-  override isAppImage = Boolean(window.__READEST_IS_APPIMAGE);
-  override isEink = Boolean(window.__READEST_IS_EINK);
+  override isAppImage = Boolean(window.__YOMI_IS_APPIMAGE ?? window.__READEST_IS_APPIMAGE);
+  override isEink = Boolean(window.__YOMI_IS_EINK ?? window.__READEST_IS_EINK);
   override hasTrafficLight = OS_TYPE === 'macos';
   override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   override hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
@@ -589,6 +594,7 @@ export class NativeAppService extends BaseAppService {
   override hasUpdater =
     OS_TYPE !== 'ios' &&
     !process.env['NEXT_PUBLIC_DISABLE_UPDATER'] &&
+    !window.__YOMI_UPDATER_DISABLED &&
     !window.__READEST_UPDATER_DISABLED;
   // orientation lock is not supported on iPad
   override hasOrientationLock =
@@ -662,9 +668,45 @@ export class NativeAppService extends BaseAppService {
         execDir,
       });
     }
+    // Seamless migration: If Yomi/ does not exist, but legacy Readest/ does exist, rename it to Yomi/
+    try {
+      const yomiExists = await exists(DATA_SUBDIR, { baseDir: BaseDirectory.AppData });
+      if (!yomiExists) {
+        const legacyExists = await exists(LEGACY_DATA_SUBDIR, { baseDir: BaseDirectory.AppData });
+        if (legacyExists) {
+          console.info(
+            `[nativeAppService] migrating legacy data dir: ${LEGACY_DATA_SUBDIR} -> ${DATA_SUBDIR}`,
+          );
+          await rename(LEGACY_DATA_SUBDIR, DATA_SUBDIR, {
+            oldPathBaseDir: BaseDirectory.AppData,
+            newPathBaseDir: BaseDirectory.AppData,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('[nativeAppService] legacy data dir migration failed:', err);
+    }
+
     const settings = await this.loadSettings();
     const customRootDir = this.customRootDir || settings.customRootDir;
     if (customRootDir) {
+      try {
+        const customYomi = `${customRootDir}/${DATA_SUBDIR}`;
+        const customLegacy = `${customRootDir}/${LEGACY_DATA_SUBDIR}`;
+        const yomiExists = await this.fs.exists(customYomi, 'None');
+        if (!yomiExists) {
+          const legacyExists = await this.fs.exists(customLegacy, 'None');
+          if (legacyExists) {
+            console.info(
+              `[nativeAppService] migrating custom root legacy data dir: ${customLegacy} -> ${customYomi}`,
+            );
+            await rename(customLegacy, customYomi);
+          }
+        }
+      } catch (err) {
+        console.warn('[nativeAppService] custom root data dir migration failed:', err);
+      }
+
       this.fs.resolvePath = getPathResolver({
         customRootDir,
         isPortable: this.isPortableApp,
@@ -970,7 +1012,7 @@ export class NativeAppService extends BaseAppService {
         srcPath,
         fileName: galleryName,
         mimeType,
-        albumName: 'Readest',
+        albumName: 'Yomi',
       });
       if (!res.success) {
         // The plugin returns the MediaStore exception here. Dropping it left an

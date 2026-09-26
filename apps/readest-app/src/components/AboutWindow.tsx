@@ -16,7 +16,6 @@ import { BRAND_NAME, BRAND_FULL_NAME } from '@/services/branding';
 import SupportLinks from './SupportLinks';
 import LegalLinks from './LegalLinks';
 import Dialog from './Dialog';
-import Link from './Link';
 
 export const setAboutDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('about_window');

@@ -30,7 +30,7 @@ import { pathToFileURL } from 'node:url';
 const SRC_DIR = resolve('data/wordlens');
 const MANIFEST_FILE = 'manifest.json';
 // Mirrors WORDLENS_CDN_BASE in src/services/wordlens/glossPacks.ts (the URL clients read).
-const CDN_BASE = process.env.WORDLENS_CDN_BASE || 'https://cdn.readest.com/wordlens';
+const CDN_BASE = process.env.WORDLENS_CDN_BASE || 'https://cdn.biblophile.com/yomi/wordlens';
 const PACK_CACHE = 'public, max-age=31536000, immutable';
 const MANIFEST_CACHE = 'public, max-age=300';
 const SUCCESS_RE = /Upload complete/i;
@@ -142,10 +142,7 @@ const uploadOne = (bucket, file) =>
   });
 
 async function main() {
-  const bucket = process.env.WORDLENS_R2_BUCKET;
-  if (!bucket) {
-    throw new Error('WORDLENS_R2_BUCKET env var is required (the cdn.readest.com R2 bucket name)');
-  }
+  const bucket = process.env.WORDLENS_R2_BUCKET || 'yomi-cdn';
   const force = process.argv.slice(2).includes('--force');
   let local;
   try {
