@@ -4,7 +4,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 const apiUrl = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'http://localhost:3001/api/v0';
 
-type AuthView = 'sign_in' | 'sign_up' | 'magic_link' | 'forgotten_password';
+type AuthView = 'sign_in' | 'sign_up' | 'magic_link' | 'verify_otp' | 'forgotten_password';
 
 interface EmailPasswordAuthProps {
   supabaseClient: SupabaseClient;
@@ -16,6 +16,7 @@ const FORM_IDS: Record<AuthView, string> = {
   sign_in: 'auth-sign-in',
   sign_up: 'auth-sign-up',
   magic_link: 'auth-magic-link',
+  verify_otp: 'auth-verify-otp',
   forgotten_password: 'auth-forgot-password',
 };
 
@@ -30,12 +31,22 @@ export default function EmailPasswordAuth({
   const _ = useTranslation();
   const [view, setView] = useState<AuthView>('sign_in');
   const [defaultEmail, setDefaultEmail] = useState('');
+  const [otpEmail, setOtpEmail] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [keyboardInset, setKeyboardInset] = useState(0);
 
   const hasPassword = view === 'sign_in' || view === 'sign_up';
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
 
   useEffect(() => {
     const vv = window.visualViewport;
@@ -79,6 +90,30 @@ export default function EmailPasswordAuth({
     setError('');
     setMessage('');
     setView(next);
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || !otpEmail || loading) return;
+    setLoading(true);
+    setError('');
+    setMessage('');
+    try {
+      const { error: err } = await supabaseClient.auth.signInWithOtp({
+        email: otpEmail,
+        options: {
+          emailRedirectTo: redirectTo,
+          shouldCreateUser: false,
+        },
+      });
+      if (err) {
+        setError(err.message);
+      } else {
+        setResendCooldown(60);
+        setMessage(_('A new 6-digit code has been sent to your email'));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -137,8 +172,31 @@ export default function EmailPasswordAuth({
             shouldCreateUser: false,
           },
         });
-        if (error) setError(error.message);
-        else setMessage(_('Check your email for the magic link'));
+        if (error) {
+          setError(error.message);
+        } else {
+          setOtpEmail(email);
+          setResendCooldown(60);
+          setView('verify_otp');
+          setMessage(_('We sent a 6-digit code and a login link to your email'));
+        }
+      } else if (view === 'verify_otp') {
+        const token = String(formData.get('otp') || '').trim();
+        if (!token) {
+          setError(_('Please enter the 6-digit verification code'));
+          setLoading(false);
+          return;
+        }
+        const { error: err } = await supabaseClient.auth.verifyOtp({
+          email: otpEmail,
+          token,
+          type: 'email',
+        });
+        if (err) {
+          setError(err.message);
+        } else {
+          setMessage(_('Verification successful. Redirecting...'));
+        }
       } else {
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) setError(error.message);
@@ -152,7 +210,8 @@ export default function EmailPasswordAuth({
   const buttonLabel = {
     sign_in: loading ? _('Signing in...') : _('Sign in'),
     sign_up: loading ? _('Signing up...') : _('Sign up'),
-    magic_link: loading ? _('Signing in ...') : _('Sign in'),
+    magic_link: loading ? _('Sending code...') : _('Send code & magic link'),
+    verify_otp: loading ? _('Verifying...') : _('Verify and sign in'),
     forgotten_password: loading
       ? _('Sending reset instructions ...')
       : _('Send reset password instructions'),
@@ -166,23 +225,58 @@ export default function EmailPasswordAuth({
       onSubmit={handleSubmit}
       className='w-full space-y-4'
     >
-      <div className='flex flex-col'>
-        <label className='flex select-none items-center justify-between px-1 py-2' htmlFor='email'>
-          <span className='text-sm'>{_('Email address')}</span>
-        </label>
-        <input
-          id='email'
-          name='email'
-          type='email'
-          required
-          defaultValue={defaultEmail}
-          placeholder={_('Your email address')}
-          autoComplete={hasPassword ? 'username' : 'email'}
-          className='input eink-bordered w-full rounded-lg placeholder:text-sm'
-          disabled={loading}
-          onFocus={keepAboveKeyboard}
-        />
-      </div>
+      {view === 'verify_otp' ? (
+        <div className='flex flex-col space-y-2'>
+          <div className='text-center text-sm text-base-content/80'>
+            {_('Enter the 6-digit code sent to')}{' '}
+            <span className='font-semibold text-base-content'>{otpEmail}</span>
+          </div>
+          <div className='flex flex-col'>
+            <label
+              className='flex select-none items-center justify-between px-1 py-2'
+              htmlFor='otp'
+            >
+              <span className='text-sm'>{_('Verification code')}</span>
+            </label>
+            <input
+              id='otp'
+              name='otp'
+              type='text'
+              inputMode='numeric'
+              pattern='[0-9]*'
+              maxLength={6}
+              required
+              autoFocus
+              autoComplete='one-time-code'
+              placeholder='123456'
+              className='input eink-bordered w-full rounded-lg text-center font-mono text-xl tracking-[0.4em] placeholder:tracking-normal placeholder:text-sm'
+              disabled={loading}
+              onFocus={keepAboveKeyboard}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className='flex flex-col'>
+          <label
+            className='flex select-none items-center justify-between px-1 py-2'
+            htmlFor='email'
+          >
+            <span className='text-sm'>{_('Email address')}</span>
+          </label>
+          <input
+            id='email'
+            name='email'
+            type='email'
+            required
+            defaultValue={defaultEmail}
+            placeholder={_('Your email address')}
+            autoComplete={hasPassword ? 'username' : 'email'}
+            className='input eink-bordered w-full rounded-lg placeholder:text-sm'
+            disabled={loading}
+            onFocus={keepAboveKeyboard}
+          />
+        </div>
+      )}
       {hasPassword && (
         <div className='flex flex-col'>
           <label
@@ -221,6 +315,35 @@ export default function EmailPasswordAuth({
         </div>
       )}
       <div className='flex flex-col items-center gap-2.5 pt-1 text-sm'>
+        {view === 'verify_otp' && (
+          <>
+            <p className='text-center text-xs text-base-content/60 px-2'>
+              {_('Or tap the magic link in your email to sign in automatically.')}
+            </p>
+            <button
+              type='button'
+              className={`${LINK_CLASS} ${resendCooldown > 0 ? 'cursor-not-allowed opacity-50' : ''}`}
+              onClick={handleResendOtp}
+              disabled={resendCooldown > 0 || loading}
+            >
+              {resendCooldown > 0 ? `${_('Resend code in')} ${resendCooldown}s` : _('Resend code')}
+            </button>
+            <button
+              type='button'
+              className={LINK_CLASS}
+              onClick={() => {
+                setError('');
+                setMessage('');
+                setView('magic_link');
+              }}
+            >
+              {_('Use a different email')}
+            </button>
+            <button type='button' className={LINK_CLASS} onClick={switchView('sign_in')}>
+              {_('Already have an account? Sign in')}
+            </button>
+          </>
+        )}
         {view === 'sign_in' && (
           <>
             {magicLink && (
@@ -233,7 +356,7 @@ export default function EmailPasswordAuth({
             </button>
           </>
         )}
-        {view !== 'sign_in' && (
+        {view !== 'sign_in' && view !== 'verify_otp' && (
           <button type='button' className={LINK_CLASS} onClick={switchView('sign_in')}>
             {_('Already have an account? Sign in')}
           </button>

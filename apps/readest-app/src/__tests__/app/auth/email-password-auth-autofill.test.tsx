@@ -13,6 +13,7 @@ const createSupabaseMock = () => {
     signInWithPassword: vi.fn().mockResolvedValue({ error: null }),
     signUp: vi.fn().mockResolvedValue({ data: { user: null, session: null }, error: null }),
     signInWithOtp: vi.fn().mockResolvedValue({ error: null }),
+    verifyOtp: vi.fn().mockResolvedValue({ data: { user: {}, session: {} }, error: null }),
     resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
   };
   return { client: { auth } as unknown as SupabaseClient, auth };
@@ -149,5 +150,57 @@ describe('EmailPasswordAuth autofill (#5499)', () => {
     fireEvent.submit(container.querySelector('form') as HTMLFormElement);
 
     expect(await findByText('Invalid login credentials')).toBeTruthy();
+  });
+
+  it('transitions to OTP verification view and verifies 6-digit OTP code', async () => {
+    const { client, auth } = createSupabaseMock();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const { container, getByText, findByText } = render(
+      <EmailPasswordAuth
+        supabaseClient={client}
+        magicLink={true}
+        redirectTo='https://biblophile.com/yomi/auth/callback'
+      />,
+    );
+
+    fireEvent.click(getByText('Send a magic link email'));
+    const email = container.querySelector('input[name="email"]') as HTMLInputElement;
+    autofill(email, 'reader@example.com');
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(auth.signInWithOtp).toHaveBeenCalledWith({
+        email: 'reader@example.com',
+        options: {
+          emailRedirectTo: 'https://biblophile.com/yomi/auth/callback',
+          shouldCreateUser: false,
+        },
+      });
+    });
+
+    // Check that OTP verification view is displayed
+    expect(await findByText('Verification code')).toBeTruthy();
+    const otpInput = container.querySelector('input[name="otp"]') as HTMLInputElement;
+    expect(otpInput).toBeTruthy();
+    expect(otpInput.getAttribute('autocomplete')).toBe('one-time-code');
+
+    autofill(otpInput, '123456');
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(auth.verifyOtp).toHaveBeenCalledWith({
+        email: 'reader@example.com',
+        token: '123456',
+        type: 'email',
+      });
+    });
+
+    fetchSpy.mockRestore();
   });
 });

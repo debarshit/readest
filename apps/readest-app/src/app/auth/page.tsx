@@ -40,7 +40,7 @@ export default function AuthPage() {
   const router = useRouter();
   const { login } = useAuth();
   const { envConfig, appService } = useEnv();
-  const { isDarkMode, safeAreaInsets, isRoundedWindow } = useThemeStore();
+  const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
@@ -52,7 +52,7 @@ export default function AuthPage() {
 
   useTheme({ systemUIVisible: false });
 
-  const getTauriRedirectTo = (isOAuth: boolean) => {
+  const getTauriRedirectTo = (_isOAuth: boolean) => {
     // For custom OAuth mode, use a local server to handle the OAuth callback
     // This is useful for development or some sandboxed environments like Flatpak
     // where custom URL schemes are not supported
@@ -60,9 +60,6 @@ export default function AuthPage() {
       !useCustomeOAuth.current &&
       (process.env.NODE_ENV === 'production' || appService?.isMobileApp || USE_APPLE_SIGN_IN)
     ) {
-      if (appService?.isMobileApp) {
-        return isOAuth ? DEEPLINK_CALLBACK : WEB_AUTH_CALLBACK;
-      }
       return DEEPLINK_CALLBACK;
     }
     // For development env on Desktop, use a custom OAuth callback server
