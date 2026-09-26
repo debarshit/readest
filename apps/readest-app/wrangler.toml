@@ -1,4 +1,4 @@
-name = "readest-web"
+name = "yomi-web"
 # Custom entry: re-exports OpenNext's generated fetch handler and adds the
 # scheduled() handler for the reading-statistics compaction cron (worker.ts).
 main = "./worker.ts"
@@ -13,20 +13,11 @@ preview_urls = true
 [triggers]
 crons = ["*/10 * * * *"]
 
-[[routes]]
-pattern = "web-cf.readest.com"
-zone_name = "readest.com"
-custom_domain = true
+# Custom domain routes for biblophile.com (uncomment when binding route in Cloudflare)
+# [[routes]]
+# pattern = "biblophile.com/yomi*"
+# zone_name = "biblophile.com"
 
-[[routes]]
-pattern = "api-cf.readest.com"
-zone_name = "readest.com"
-custom_domain = true
-
-[[routes]]
-pattern = "web.readest.com"
-zone_name = "readest.com"
-custom_domain = true
 
 [vars]
 PNPM_VERSION = "10.28.1"
