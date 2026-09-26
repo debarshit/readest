@@ -9,7 +9,7 @@ import { LogicalPosition } from '@tauri-apps/api/dpi';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { eventDispatcher } from '@/utils/event';
 import { openExternalUrl } from '@/utils/open';
-import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads';
+import { getBookBiblophileQuery, getBiblophileSearchUrl } from '@/utils/biblophile';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
@@ -220,10 +220,10 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           revealItemInDir(folder);
         },
       },
-      searchGoodreads: {
-        text: _('Search on Goodreads'),
+      searchBiblophile: {
+        text: _('Search on Biblophile'),
         action: async () => {
-          openExternalUrl(getGoodreadsSearchUrl(getBookGoodreadsQuery(book)));
+          openExternalUrl(getBiblophileSearchUrl(getBookBiblophileQuery(book)));
         },
       },
       download: {

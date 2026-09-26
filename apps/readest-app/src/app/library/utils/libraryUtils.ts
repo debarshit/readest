@@ -957,7 +957,7 @@ export type BookContextMenuItemId =
   | 'clearStatus'
   | 'showDetails'
   | 'showInFinder'
-  | 'searchGoodreads'
+  | 'searchBiblophile'
   | 'download'
   | 'upload'
   | 'share'
@@ -1090,7 +1090,7 @@ export const getBookContextMenuItemIds = (
   ) {
     ids.push('clearStatus');
   }
-  ids.push('showDetails', 'showInFinder', 'searchGoodreads');
+  ids.push('showDetails', 'showInFinder', 'searchBiblophile');
   // A feed book has no file to move: every transfer action would fail, and the
   // share dialog uploads before it can hand out a link (issue #5307).
   if (!isFeedBook(book)) {

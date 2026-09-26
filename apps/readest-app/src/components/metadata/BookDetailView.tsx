@@ -15,7 +15,7 @@ import { Book } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
 import { openExternalUrl } from '@/utils/open';
 import { sanitizeHtml } from '@/utils/sanitize';
-import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads';
+import { getBookBiblophileQuery, getBiblophileSearchUrl } from '@/utils/biblophile';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDefaultBookshelfCovers } from '@/hooks/useDefaultBookshelfCovers';
@@ -229,14 +229,14 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                   'border-base-300 bg-base-200! z-20 mt-1 max-w-[90vw] shadow-2xl',
                 )}
               >
-                {/* <MenuItem
+                <MenuItem
                   noIcon
                   transient
-                  label={_('Search on Goodreads')}
+                  label={_('Search on Biblophile')}
                   onClick={() =>
-                    openExternalUrl(getGoodreadsSearchUrl(getBookGoodreadsQuery(book)))
+                    openExternalUrl(getBiblophileSearchUrl(getBookBiblophileQuery(book)))
                   }
-                /> */}
+                />
                 {onShare && (
                   <MenuItem
                     noIcon

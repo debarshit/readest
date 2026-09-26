@@ -708,7 +708,6 @@ describe('customDictionaryStore — loadCustomDictionaries reconciliation', () =
       'web:builtin:google',
       'web:builtin:urban',
       'web:builtin:merriam-webster',
-      'web:builtin:goodreads',
     ]);
   });
 

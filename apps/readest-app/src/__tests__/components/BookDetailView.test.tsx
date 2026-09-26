@@ -128,19 +128,19 @@ describe('BookDetailView delete dropdown layout', () => {
   });
 });
 
-describe('BookDetailView More menu (Goodreads + Share)', () => {
+describe('BookDetailView More menu (Biblophile + Share)', () => {
   const openMore = (container: HTMLElement) => {
     const toggle = container.querySelector('button[aria-label="More Actions"]');
     expect(toggle).toBeTruthy();
     fireEvent.click(toggle!);
   };
 
-  it('folds Goodreads and Share into the hamburger menu', () => {
+  it('folds Biblophile and Share into the hamburger menu', () => {
     const { container, getByText } = renderView({ onShare: vi.fn(), shareEnabled: true });
-    // Goodreads is no longer a standalone icon button outside the menu.
+    // Biblophile is folded into the more menu.
     expect(container.querySelector('button[aria-label="More Actions"]')).toBeTruthy();
     openMore(container);
-    expect(getByText('Search on Goodreads')).toBeTruthy();
+    expect(getByText('Search on Biblophile')).toBeTruthy();
     expect(getByText('Share Book')).toBeTruthy();
   });
 

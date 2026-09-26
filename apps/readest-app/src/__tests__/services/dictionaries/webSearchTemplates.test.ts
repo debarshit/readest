@@ -7,22 +7,28 @@ import {
   substituteUrlTemplate,
 } from '@/services/dictionaries/webSearchTemplates';
 
-describe('Goodreads built-in web search', () => {
-  it('is registered as a built-in template', () => {
-    const tpl = getBuiltinWebSearch(BUILTIN_WEB_SEARCH_IDS.goodreads);
-    expect(tpl).toBeDefined();
-    expect(tpl?.name).toBe('Goodreads');
-  });
-
-  it('is included in the built-in list', () => {
+describe('Built-in web searches', () => {
+  it('registers Google, Urban Dictionary, and Merriam-Webster templates', () => {
     const ids = BUILTIN_WEB_SEARCHES.map((t) => t.id);
-    expect(ids).toContain(BUILTIN_WEB_SEARCH_IDS.goodreads);
+    expect(ids).toEqual([
+      BUILTIN_WEB_SEARCH_IDS.google,
+      BUILTIN_WEB_SEARCH_IDS.urban,
+      BUILTIN_WEB_SEARCH_IDS.merriamWebster,
+    ]);
   });
 
-  it('produces a Goodreads search URL when the word is substituted', () => {
-    const tpl = getBuiltinWebSearch(BUILTIN_WEB_SEARCH_IDS.goodreads)!;
-    expect(substituteUrlTemplate(tpl.urlTemplate, 'The Dispossessed')).toBe(
-      'https://www.goodreads.com/search?q=The%20Dispossessed',
+  it('resolves templates by id', () => {
+    expect(getBuiltinWebSearch(BUILTIN_WEB_SEARCH_IDS.google)?.name).toBe('Google');
+    expect(getBuiltinWebSearch(BUILTIN_WEB_SEARCH_IDS.urban)?.name).toBe('Urban Dictionary');
+    expect(getBuiltinWebSearch(BUILTIN_WEB_SEARCH_IDS.merriamWebster)?.name).toBe(
+      'Merriam-Webster',
+    );
+  });
+
+  it('substitutes %WORD% in url templates correctly', () => {
+    const google = getBuiltinWebSearch(BUILTIN_WEB_SEARCH_IDS.google)!;
+    expect(substituteUrlTemplate(google.urlTemplate, 'ephemeral')).toBe(
+      'https://www.google.com/search?q=define:ephemeral&hl=en',
     );
   });
 });
