@@ -88,7 +88,7 @@ async function fetchRemoteManifest() {
 const uploadOne = (bucket, file) =>
   new Promise((resolveP) => {
     const cacheControl = file === 'manifest.json' ? MANIFEST_CACHE : PACK_CACHE;
-    const key = `${bucket}/wordlens/${file}`;
+    const key = `${bucket}/yomi/wordlens/${file}`;
     console.log(`Uploading ${file} -> ${key}`);
     const child = spawn(
       'wrangler',
@@ -154,7 +154,7 @@ async function main() {
   if (!force && !remote) console.log('Remote manifest unavailable — uploading every pack.');
   const packs = planSync(local, remote, { force });
   if (!packs.length && !manifestChanged(local, remote)) {
-    console.log(`Everything on ${bucket}/wordlens/ is already up to date.`);
+    console.log(`Everything on ${bucket}/yomi/wordlens/ is already up to date.`);
     return;
   }
   if (packs.length) {
@@ -183,7 +183,7 @@ async function main() {
     console.error(`\nFailed: ${MANIFEST_FILE}`);
     process.exit(1);
   }
-  console.log(`\nSynced ${ok} pack(s) + ${MANIFEST_FILE} to ${bucket}/wordlens/`);
+  console.log(`\nSynced ${ok} pack(s) + ${MANIFEST_FILE} to ${bucket}/yomi/wordlens/`);
 }
 
 // Only run the CLI when executed directly, not when imported by the unit tests.
