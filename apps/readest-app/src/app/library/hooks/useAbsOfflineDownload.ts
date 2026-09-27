@@ -22,7 +22,7 @@ export const useAbsOfflineDownload = () => {
   // Only badge users who can't use it yet: signed out, or a resolved plan
   // without the feature — never an entitled user whose plan is still loading.
   const offlinePremiumLabel =
-    !entitled && (!user || userProfilePlan !== undefined) ? _('Premium') : undefined;
+    !entitled && (!user || userProfilePlan !== undefined) ? _('Plus') : undefined;
 
   const handleBookOfflineDownload = useCallback(
     (book: Book) => {

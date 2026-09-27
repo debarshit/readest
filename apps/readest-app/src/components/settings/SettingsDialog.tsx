@@ -106,17 +106,17 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       icon: RiTranslate,
       label: _('Language'),
     },
-    // {
-    //   tab: 'Integrations',
-    //   icon: RiShareLine,
-    //   label: _('Integrations'),
-    // },
-    // {
-    //   tab: 'AI',
-    //   icon: PiRobot,
-    //   label: _('AI Assistant'),
-    //   disabled: process.env.NODE_ENV === 'production',
-    // },
+    {
+      tab: 'Integrations',
+      icon: RiShareLine,
+      label: _('Integrations'),
+    },
+    {
+      tab: 'AI',
+      icon: PiRobot,
+      label: _('AI Assistant'),
+      disabled: process.env.NODE_ENV === 'production',
+    },
     {
       tab: 'TTS',
       icon: PiSpeakerHigh,

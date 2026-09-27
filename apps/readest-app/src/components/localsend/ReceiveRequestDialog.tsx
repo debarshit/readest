@@ -160,7 +160,7 @@ const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
                 {_('Always accept from {{alias}}', { alias: request.sender.alias })}
               </span>
               <span className='badge badge-sm badge-ghost ms-auto mt-0.5 shrink-0'>
-                {_('Premium')}
+                {_('Plus')}
               </span>
             </button>
           )}

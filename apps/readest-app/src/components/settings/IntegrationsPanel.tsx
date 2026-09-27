@@ -116,7 +116,7 @@ const IntegrationsPanel: React.FC = () => {
   // noise. Suppressing it while a signed-in user's plan is still loading avoids
   // flashing the chip at a premium user on every open.
   const premiumBadge =
-    !user || (userProfilePlan !== undefined && !isCloudSyncPremium) ? _('Premium') : undefined;
+    !user || (userProfilePlan !== undefined && !isCloudSyncPremium) ? _('Plus') : undefined;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
 

@@ -470,7 +470,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       <hr aria-hidden='true' className='border-base-200 my-1' />
       {user && userProfilePlan === 'free' && (
         <MenuItem
-          label={_('Upgrade to {{brand}} Premium', { brand: BRAND_NAME })}
+          label={_('Upgrade to {{brand}} Plus', { brand: BRAND_NAME })}
           onClick={handleUpgrade}
         />
       )}
