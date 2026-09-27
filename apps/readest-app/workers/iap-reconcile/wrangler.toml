@@ -1,4 +1,4 @@
-name = "readest-iap-reconcile"
+name = "yomi-iap-reconcile"
 main = "src/index.ts"
 compatibility_date = "2026-04-10"
 compatibility_flags = ["nodejs_compat"]
@@ -15,10 +15,9 @@ crons = ["7 * * * *"]
 enabled = true
 head_sampling_rate = 1
 
-# Same dataset the main worker writes webhook events to.
-[[analytics_engine_datasets]]
-binding = "IAP_WEBHOOK_AE"
-dataset = "iap_webhooks"
+# [[analytics_engine_datasets]]
+# binding = "IAP_WEBHOOK_AE"
+# dataset = "iap_webhooks"
 
 # Required secrets (do not commit). Set from this directory with:
 #   wrangler secret put SUPABASE_URL
