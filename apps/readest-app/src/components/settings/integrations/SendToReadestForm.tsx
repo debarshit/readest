@@ -243,7 +243,7 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
             <h3 className='text-base font-semibold'>{_('Email books straight to your library')}</h3>
             <p className='text-base-content/70 max-w-sm text-sm leading-relaxed'>
               {_(
-                'Forward attachments and articles to your private {{brand}} address. Available on the Plus, Pro, and Lifetime plans.',
+                'Forward attachments and articles to your private {{brand}} address. Available on the Plus plan.',
                 { brand: BRAND_NAME },
               )}
             </p>

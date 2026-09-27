@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaApple, FaGooglePlay } from 'react-icons/fa';
-import { IoCheckmarkCircle, IoSparkles } from 'react-icons/io5';
+import { IoCheckmarkCircle } from 'react-icons/io5';
 import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -31,16 +31,18 @@ export const MobileAppUpgradeModal: React.FC<MobileAppUpgradeModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={_('Upgrade to Yomi Plus')}
-      className='max-w-lg'
+      boxClassName='sm:w-[540px]! sm:max-w-[560px]! sm:h-auto! sm:max-h-[90vh]!'
+      contentClassName='px-6! pb-6! pt-1!'
     >
-      <div className='flex flex-col gap-5 p-2'>
-        <div className='flex items-center gap-3 rounded-xl bg-sky-50 p-4 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200'>
-          <IoSparkles className='h-8 w-8 shrink-0 text-sky-600 dark:text-sky-400' />
+      <div className='flex flex-col gap-4 py-1'>
+        <div className='rounded-xl border border-[#D17842]/30 bg-[#D17842]/10 p-4 text-base-content'>
           <div className='text-sm leading-relaxed'>
             <span className='font-semibold'>{_('Unlock the ultimate reading experience.')}</span>{' '}
-            {_(
-              'Subscriptions are managed securely through the Yomi iOS and Android apps to provide seamless billing in your local currency.',
-            )}
+            <span className='text-base-content/80'>
+              {_(
+                'Subscriptions are managed securely through the Yomi iOS and Android apps to provide seamless billing in your local currency.',
+              )}
+            </span>
           </div>
         </div>
 
@@ -51,7 +53,7 @@ export const MobileAppUpgradeModal: React.FC<MobileAppUpgradeModalProps> = ({
           <ul className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
             {benefits.map((benefit, idx) => (
               <li key={idx} className='flex items-start gap-2 text-xs text-base-content/80'>
-                <IoCheckmarkCircle className='mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400' />
+                <IoCheckmarkCircle className='mt-0.5 h-4 w-4 shrink-0 text-[#D17842]' />
                 <span>{benefit}</span>
               </li>
             ))}
