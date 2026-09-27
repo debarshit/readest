@@ -269,6 +269,11 @@ jobs:
           path: apps/readest-app/src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
           if-no-files-found: warn
 
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
       - name: Install Fastlane
         run: gem install fastlane --no-document
 
