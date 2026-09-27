@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaApple, FaGooglePlay } from 'react-icons/fa';
 import { IoCheckmarkCircle } from 'react-icons/io5';
 import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
+import { detectUserRegion, RegionPricing, setStoredUserRegion } from '../utils/regionalPricing';
+import RegionSelector from './RegionSelector';
 
 interface MobileAppUpgradeModalProps {
   isOpen: boolean;
@@ -14,6 +16,7 @@ export const MobileAppUpgradeModal: React.FC<MobileAppUpgradeModalProps> = ({
   onClose,
 }) => {
   const _ = useTranslation();
+  const [selectedRegion, setSelectedRegion] = useState<RegionPricing>(() => detectUserRegion());
 
   const benefits = [
     _('10 GB Cloud Sync Storage across all devices'),
@@ -43,6 +46,25 @@ export const MobileAppUpgradeModal: React.FC<MobileAppUpgradeModalProps> = ({
                 'Subscriptions are managed securely through the Yomi iOS and Android apps to provide seamless billing in your local currency.',
               )}
             </span>
+          </div>
+          <div className='mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#D17842]/20 pt-2.5'>
+            <div className='flex items-baseline gap-1.5'>
+              <span className='font-bold text-[#D17842] text-base'>
+                {selectedRegion.monthly.formatted}
+              </span>
+              <span className='text-xs text-base-content/70'>/{_('month')}</span>
+              <span className='text-xs text-base-content/60'>
+                ({selectedRegion.yearly.formatted}/{_('year')} ·{' '}
+                {_('Save {{percent}}%', { percent: selectedRegion.savingsPercent })})
+              </span>
+            </div>
+            <RegionSelector
+              selectedRegion={selectedRegion}
+              onSelectRegion={(r) => {
+                setSelectedRegion(r);
+                setStoredUserRegion(r.regionCode);
+              }}
+            />
           </div>
         </div>
 

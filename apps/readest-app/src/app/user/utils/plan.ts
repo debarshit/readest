@@ -1,6 +1,7 @@
 import type { StripeAvailablePlan } from '@/libs/payment/stripe/client';
 import type { AvailablePlan, PlanInterval, PlanType, QuotaFeature, UserPlan } from '@/types/quota';
 import { stubTranslation as _ } from '@/utils/misc';
+import type { RegionPricing } from './regionalPricing';
 
 type FeatureType = {
   label: string;
@@ -21,13 +22,16 @@ export type PlanDetails = {
   type: PlanType;
   color: string;
   hintColor: string;
-  price: number; // in cents
+  price: number; // in cents or zero-decimal major units
   currency: string;
+  formattedPrice?: string;
+  monthlyEquivalentFormatted?: string;
   productId?: string;
   interval: string;
   features: FeatureType[];
   limits?: Record<string, string | number>;
   products?: ProductInfo[];
+  regionPricing?: RegionPricing;
 };
 
 const getProductFeature = (productId: string): QuotaFeature | undefined => {
@@ -63,7 +67,10 @@ export const getSubscriptionIntervals = (availablePlans: AvailablePlan[]): PlanI
  * tier has both intervals priced or the yearly price saves nothing — the badge
  * is then omitted rather than claiming a discount that isn't there.
  */
-export const getYearlySavingsPercent = (availablePlans: AvailablePlan[]): number | null => {
+export const getYearlySavingsPercent = (
+  availablePlans: AvailablePlan[],
+  regionPricing?: RegionPricing,
+): number | null => {
   let best: number | null = null;
   for (const tier of SUBSCRIPTION_TIERS) {
     const monthly = availablePlans.find((p) => p.plan === tier && p.interval === 'month');
@@ -74,7 +81,9 @@ export const getYearlySavingsPercent = (availablePlans: AvailablePlan[]): number
       best = saving;
     }
   }
-  return best;
+  if (best !== null) return best;
+  if (regionPricing) return regionPricing.savingsPercent;
+  return null;
 };
 
 /**
@@ -152,11 +161,13 @@ export function getPlanDetails(
   planCode: UserPlan,
   availablePlans: (AvailablePlan & StripeAvailablePlan)[],
   interval: PlanInterval = 'month',
+  regionPricing?: RegionPricing,
 ): PlanDetails {
   const availablePlan = availablePlans.find(
     (plan) => plan.plan === planCode && (!plan.interval || plan.interval === interval),
   );
-  const currency = availablePlans?.[0]?.currency ?? 'USD';
+  const currency =
+    availablePlans?.[0]?.currency ?? (regionPricing ? regionPricing.currency : 'USD');
   switch (planCode) {
     case 'purchase': {
       const purchasableProducts: ProductInfo[] = availablePlans
@@ -252,15 +263,40 @@ export function getPlanDetails(
           [_('AI Translations (per day)')]: '10K',
         },
       };
-    case 'plus':
+    case 'plus': {
+      const isCustomStripePlan =
+        availablePlan?.productId && !availablePlan.productId.startsWith('com.biblophile.yomi');
+      const isRegionalOverride = !!regionPricing && !isCustomStripePlan;
+      const plusPrice = isRegionalOverride
+        ? interval === 'year'
+          ? regionPricing.yearly.amount
+          : regionPricing.monthly.amount
+        : availablePlan?.price || (interval === 'year' ? 2999 : 399);
+      const plusCurrency = isRegionalOverride
+        ? regionPricing.currency
+        : (availablePlan?.currency ?? currency);
+      const formattedPrice = isRegionalOverride
+        ? interval === 'year'
+          ? regionPricing.yearly.formatted
+          : regionPricing.monthly.formatted
+        : undefined;
+      const monthlyEquivalentFormatted = isRegionalOverride
+        ? interval === 'year'
+          ? regionPricing.yearly.monthlyEquivalentFormatted
+          : regionPricing.monthly.monthlyEquivalentFormatted
+        : undefined;
+
       return {
         name: _('Plus Plan'),
         plan: planCode,
         type: 'subscription',
         color: 'not-eink:bg-[#D17842]/15 not-eink:text-[#D17842] eink-bordered',
         hintColor: 'text-base-content/60',
-        price: availablePlan?.price || (interval === 'year' ? 2999 : 399),
-        currency,
+        price: plusPrice,
+        currency: plusCurrency,
+        formattedPrice,
+        monthlyEquivalentFormatted,
+        regionPricing,
         productId: availablePlan?.productId,
         interval: interval === 'month' ? _('month') : _('year'),
         features: [
@@ -327,6 +363,7 @@ export function getPlanDetails(
           [_('AI Translations (per day)')]: '150K',
         },
       };
+    }
     case 'pro':
       return {
         name: _('Pro Plan'),

@@ -41,10 +41,15 @@ const PlanCard: React.FC<PlanCardProps> = ({
   const isYearly = plan.type === 'subscription' && plan.plan !== 'free' && interval === 'year';
   // Yearly plans lead with the per-month equivalent — the figure people compare
   // against the monthly price — with the amount actually charged underneath.
-  const headlinePrice = formatPrice(isYearly ? price / 12 : price);
+  const headlinePrice = plan.monthlyEquivalentFormatted
+    ? plan.monthlyEquivalentFormatted
+    : formatPrice(isYearly ? price / 12 : price);
 
   const renderPriceCaption = () => {
-    if (isYearly) return _('{{price}} billed yearly', { price: formatPrice(price) });
+    if (isYearly) {
+      const yearlyStr = plan.formattedPrice || formatPrice(price);
+      return _('{{price}} billed yearly', { price: yearlyStr });
+    }
     return null;
   };
 

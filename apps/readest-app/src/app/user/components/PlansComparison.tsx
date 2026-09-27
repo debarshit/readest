@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { AvailablePlan, PlanInterval, PlanType, UserPlan } from '@/types/quota';
 import { getPlanDetails, getSubscriptionIntervals, getYearlySavingsPercent } from '../utils/plan';
+import { detectUserRegion, RegionPricing, setStoredUserRegion } from '../utils/regionalPricing';
 import BillingIntervalToggle from './BillingIntervalToggle';
+import RegionSelector from './RegionSelector';
 import PlanCard from './PlanCard';
 
 interface PlansComparisonProps {
@@ -22,22 +24,35 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   onSubscribe,
 }) => {
   const [interval, setInterval] = useState<PlanInterval>('month');
+  const [selectedRegion, setSelectedRegion] = useState<RegionPricing>(() => detectUserRegion());
 
   const intervals = getSubscriptionIntervals(availablePlans);
-  const savingsPercent = getYearlySavingsPercent(availablePlans);
+  const savingsPercent = getYearlySavingsPercent(availablePlans, selectedRegion);
   const selectedInterval = intervals.includes(interval) ? interval : 'month';
 
   const userPlanIndex = Math.max(0, PLAN_ORDER.indexOf(userPlan));
-  const allPlans = PLAN_ORDER.map((plan) => getPlanDetails(plan, availablePlans, selectedInterval));
+  const allPlans = PLAN_ORDER.map((plan) =>
+    getPlanDetails(plan, availablePlans, selectedInterval, selectedRegion),
+  );
+
+  const handleRegionChange = (region: RegionPricing) => {
+    setSelectedRegion(region);
+    setStoredUserRegion(region.regionCode);
+  };
 
   return (
     <div className='flex flex-col gap-6'>
-      <BillingIntervalToggle
-        intervals={intervals}
-        value={selectedInterval}
-        savingsPercent={savingsPercent}
-        onChange={setInterval}
-      />
+      <div className='flex flex-wrap items-center justify-between gap-3'>
+        <BillingIntervalToggle
+          intervals={intervals}
+          value={selectedInterval}
+          savingsPercent={savingsPercent}
+          onChange={setInterval}
+        />
+        <div className='ml-auto'>
+          <RegionSelector selectedRegion={selectedRegion} onSelectRegion={handleRegionChange} />
+        </div>
+      </div>
 
       <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
         {allPlans.map((plan, index) => (

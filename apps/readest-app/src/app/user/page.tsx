@@ -16,6 +16,7 @@ import { navigateToLibrary } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { getPlanDetails, shouldUseBillingPortal } from './utils/plan';
+import { detectUserRegion } from './utils/regionalPricing';
 import { Toast } from '@/components/Toast';
 import {
   purchaseIAPProduct,
@@ -320,7 +321,8 @@ const ProfilePage = () => {
   const userFullName = userMetadata?.['full_name'] || userMetadata?.['name'] || '-';
   const userEmail = user?.email || '';
   const userPlanDetails =
-    getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
+    getPlanDetails(userProfilePlan, availablePlans, 'month', detectUserRegion()) ||
+    getPlanDetails('free', availablePlans, 'month', detectUserRegion());
 
   return (
     <div
