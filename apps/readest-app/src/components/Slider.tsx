@@ -1,4 +1,3 @@
-import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 
 interface SliderProps {
@@ -18,7 +17,6 @@ interface SliderProps {
   minClassName?: string;
   maxClassName?: string;
   bubbleClassName?: string;
-  fillClassName?: string;
   onChange?: (value: number) => void;
   valueToPosition?: (value: number, min: number, max: number) => number;
   positionToValue?: (position: number, min: number, max: number) => number;
@@ -41,7 +39,6 @@ const Slider: React.FC<SliderProps> = ({
   minClassName = '',
   maxClassName = '',
   bubbleClassName = '',
-  fillClassName = '',
   onChange,
   valueToPosition,
   positionToValue,
@@ -103,10 +100,7 @@ const Slider: React.FC<SliderProps> = ({
         <div className='bg-base-300/40 absolute h-full w-full rounded-full'></div>
         {/* Filled portion */}
         <div
-          className={clsx(
-            'slider-fill absolute h-full rounded-full',
-            fillClassName || 'bg-base-300',
-          )}
+          className='slider-fill bg-base-300 absolute h-full rounded-full'
           style={{
             width: fillWidth,
             insetInlineStart: 0,
