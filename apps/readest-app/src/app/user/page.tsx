@@ -39,7 +39,6 @@ import LegalLinks from '@/components/LegalLinks';
 import Spinner from '@/components/Spinner';
 import ProfileHeader from './components/Header';
 import UserInfo from './components/UserInfo';
-import UsageStats from './components/UsageStats';
 import PlansComparison from './components/PlansComparison';
 import AccountActions from './components/AccountActions';
 import StorageManager from './components/StorageManager';
@@ -47,6 +46,7 @@ import SharedLinksSection from './components/SharedLinksSection';
 import { SyncPassphraseSection } from './components/SyncPassphraseSection';
 import { SyncCategoriesSection } from './components/SyncCategoriesSection';
 import Checkout from './components/Checkout';
+import MobileAppUpgradeModal from './components/MobileAppUpgradeModal';
 
 type CheckoutState = {
   clientSecret: string;
@@ -74,6 +74,7 @@ const ProfilePage = () => {
     sessionId: '',
     planName: '',
   });
+  const [showMobileUpgradeModal, setShowMobileUpgradeModal] = useState(false);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -93,7 +94,7 @@ const ProfilePage = () => {
 
   useTheme({ systemUIVisible: false });
 
-  const { quotas, userProfilePlan = 'free', customizationPurchased } = useQuotaStats();
+  const { quotas: _quotas, userProfilePlan = 'free', customizationPurchased } = useQuotaStats();
   const {
     handleLogout,
     handleResetPassword,
@@ -130,7 +131,10 @@ const ProfilePage = () => {
     }
   };
 
-  const handleStripeSubscribe = async (productId?: string, planType: PlanType = 'subscription') => {
+  const _handleStripeSubscribe = async (
+    productId?: string,
+    planType: PlanType = 'subscription',
+  ) => {
     if (!productId) return;
 
     // Someone who already holds a subscription changes plan or billing period
@@ -201,6 +205,14 @@ const ProfilePage = () => {
       console.error('IAP purchase error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePlanSubscribe = (productId?: string) => {
+    if (appService?.hasIAP && iapAvailable) {
+      handleIAPSubscribe(productId);
+    } else {
+      setShowMobileUpgradeModal(true);
     }
   };
 
@@ -303,12 +315,12 @@ const ProfilePage = () => {
     );
   }
 
-  const avatarUrl = user?.user_metadata?.['profilePic'] || user?.user_metadata?.['avatar_url'];
-  const userFullName = user?.user_metadata?.['full_name'] || '-';
+  const userMetadata = user?.user_metadata as Record<string, string | undefined> | undefined;
+  const avatarUrl = userMetadata?.['profilePic'] || userMetadata?.['avatar_url'];
+  const userFullName = userMetadata?.['full_name'] || userMetadata?.['name'] || '-';
   const userEmail = user?.email || '';
-  // const userPlanDetails =
-  //   getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
-  const userPlanDetails = '';
+  const userPlanDetails =
+    getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
 
   return (
     <div
@@ -369,18 +381,14 @@ const ProfilePage = () => {
                   </div>
                 ) : (
                   <>
-                    {/* <div className='flex flex-col gap-y-8 sm:px-6'>
+                    <div className='flex flex-col gap-y-8 sm:px-6'>
                       <PlansComparison
                         availablePlans={availablePlans}
                         userPlan={userProfilePlan}
                         customizationPurchased={customizationPurchased}
-                        onSubscribe={
-                          appService.hasIAP && iapAvailable
-                            ? handleIAPSubscribe
-                            : handleStripeSubscribe
-                        }
+                        onSubscribe={handlePlanSubscribe}
                       />
-                    </div> */}
+                    </div>
                     <div className='flex flex-col gap-y-8 px-6'>
                       <AccountActions
                         userPlan={userProfilePlan}
@@ -405,6 +413,10 @@ const ProfilePage = () => {
           )}
         </div>
         <Toast />
+        <MobileAppUpgradeModal
+          isOpen={showMobileUpgradeModal}
+          onClose={() => setShowMobileUpgradeModal(false)}
+        />
       </div>
     </div>
   );

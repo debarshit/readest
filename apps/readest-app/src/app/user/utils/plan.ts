@@ -42,9 +42,8 @@ const getProductFeature = (productId: string): QuotaFeature | undefined => {
   return undefined;
 };
 
-// Only Plus and Pro are sold on a recurring interval; `purchase` is one-time
-// and `free` has no price to compare.
-const SUBSCRIPTION_TIERS: UserPlan[] = ['plus', 'pro'];
+// Yomi launches with a single recurring tier: Plus
+const SUBSCRIPTION_TIERS: UserPlan[] = ['plus'];
 
 /**
  * Which billing intervals the store front may offer. Yearly only appears once
@@ -260,7 +259,7 @@ export function getPlanDetails(
         type: 'subscription',
         color: 'not-eink:bg-sky-100 not-eink:text-sky-800 eink-bordered',
         hintColor: 'text-base-content/60',
-        price: availablePlan?.price || (interval === 'year' ? 3999 : 499),
+        price: availablePlan?.price || (interval === 'year' ? 2999 : 399),
         currency,
         productId: availablePlan?.productId,
         interval: interval === 'month' ? _('month') : _('year'),
@@ -269,37 +268,51 @@ export function getPlanDetails(
             label: _('Includes All Free Plan Benefits'),
           },
           {
+            label: _('10 GB Cloud Sync Storage'),
+            description: _(
+              'Securely store and access your entire reading collection across all devices with up to 10 GB of cloud storage.',
+            ),
+          },
+          {
+            label: _('150,000 AI Translation Chars / Day'),
+            description: _(
+              'Unlock enhanced translation capabilities with 150K daily usage and advanced translation models.',
+            ),
+          },
+          {
             label: _('Unlimited AI Read Aloud Hours'),
             description: _(
-              'Listen without limits—convert as much text as you like into immersive audio.',
+              'Listen without limits and pre-download audiobooks and chapters for offline listening.',
             ),
           },
           {
-            label: _('More AI Translations'),
+            label: _('Third-Party Cloud Storage Sync'),
             description: _(
-              'Unlock enhanced translation capabilities with more daily usage and advanced options.',
+              'Sync seamlessly with personal WebDAV, Google Drive, OneDrive, and S3 backends.',
             ),
           },
           {
-            label: _('DeepL Pro Access'),
+            label: _('Audiobookshelf Offline Downloads'),
             description: _(
-              'Translate up to 100,000 characters daily with the most accurate translation engine available.',
+              'Download full audiobooks and tracks from your personal Audiobookshelf servers.',
             ),
           },
           {
-            label: _('Cloud Sync Storage'),
+            label: _('Send-to-Yomi via Email'),
             description: _(
-              'Securely store and access your entire reading collection with up to 5 GB of cloud storage.',
+              'Receive books and web articles directly into your library with a dedicated personal email address.',
             ),
           },
           {
-            // Plus and Pro carry the premium feature set that the Full
-            // Customization unlock sells separately, so the tier should say so.
-            // Reuses the existing key rather than a new phrasing: it is already
-            // translated in every locale.
+            label: _('Nearby BookDrop Device Pairing'),
+            description: _(
+              'Automatically receive documents from your trusted mobile, tablet, and desktop devices without manual prompts.',
+            ),
+          },
+          {
             label: _('Unlock All Customization Options'),
             description: _(
-              'Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.',
+              'Unlock additional themes, fonts, typography tweaks, and e-ink display optimizations.',
             ),
           },
           {
@@ -310,8 +323,8 @@ export function getPlanDetails(
           },
         ],
         limits: {
-          [_('Cloud Sync Storage')]: '5 GB',
-          [_('AI Translations (per day)')]: '100K',
+          [_('Cloud Sync Storage')]: '10 GB',
+          [_('AI Translations (per day)')]: '150K',
         },
       };
     case 'pro':

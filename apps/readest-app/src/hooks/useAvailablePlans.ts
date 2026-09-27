@@ -4,16 +4,25 @@ import { fetchStripePlans } from '@/libs/payment/stripe/client';
 import { AvailablePlan } from '@/types/quota';
 import { stubTranslation as _ } from '@/utils/misc';
 
-const IAP_PRODUCT_IDS = [
-  'com.bilingify.readest.monthly.plus',
-  'com.bilingify.readest.monthly.pro',
-  'com.bilingify.readest.yearly.plus',
-  'com.bilingify.readest.yearly.pro',
-  'com.bilingify.readest.storage.1gb.purchase',
-  'com.bilingify.readest.storage.2gb.purchase',
-  'com.bilingify.readest.storage.5gb.purchase',
-  'com.bilingify.readest.storage.10gb.purchase',
-  'com.bilingify.readest.customization.purchase',
+const IAP_PRODUCT_IDS = ['com.biblophile.yomi.monthly.plus', 'com.biblophile.yomi.yearly.plus'];
+
+const WEB_DISPLAY_PLANS: AvailablePlan[] = [
+  {
+    plan: 'plus',
+    productId: 'com.biblophile.yomi.monthly.plus',
+    price: 399,
+    currency: 'USD',
+    interval: 'month',
+    productName: 'Yomi Plus',
+  },
+  {
+    plan: 'plus',
+    productId: 'com.biblophile.yomi.yearly.plus',
+    price: 2999,
+    currency: 'USD',
+    interval: 'year',
+    productName: 'Yomi Plus',
+  },
 ];
 
 interface UseAvailablePlansParams {
@@ -38,13 +47,22 @@ export const useAvailablePlans = ({ hasIAP, onError }: UseAvailablePlansParams) 
           setAvailablePlans(plans);
           setIapAvailable(true);
         } else {
-          const plans = await fetchStripePlans();
-          setAvailablePlans(plans);
+          try {
+            const plans = await fetchStripePlans();
+            if (plans && plans.length > 0) {
+              setAvailablePlans(plans);
+            } else {
+              setAvailablePlans(WEB_DISPLAY_PLANS);
+            }
+          } catch {
+            setAvailablePlans(WEB_DISPLAY_PLANS);
+          }
         }
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Unknown error');
         setError(error);
         console.error(`Failed to fetch ${hasIAP ? 'IAP' : 'Stripe'} plans:`, error);
+        setAvailablePlans(WEB_DISPLAY_PLANS);
 
         if (onError) {
           onError(_('Failed to load subscription plans.'));

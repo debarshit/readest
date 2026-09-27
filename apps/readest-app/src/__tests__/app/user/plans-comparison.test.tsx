@@ -87,9 +87,9 @@ describe('PlansComparison', () => {
     );
 
     fireEvent.click(screen.getByText('Yearly'));
-    fireEvent.click(within(planCard('Pro Plan')).getByText('Upgrade to Pro Plan'));
+    fireEvent.click(within(planCard('Plus Plan')).getByText('Upgrade to Plus Plan'));
 
-    expect(onSubscribe).toHaveBeenCalledWith('price_year_pro');
+    expect(onSubscribe).toHaveBeenCalledWith('price_year_plus');
   });
 
   it('lets an existing subscriber change billing period from their own tier', () => {
@@ -111,21 +111,5 @@ describe('PlansComparison', () => {
     render(<PlansComparison availablePlans={MONTHLY_ONLY} userPlan='plus' onSubscribe={vi.fn()} />);
 
     expect(screen.queryByText('Change billing period')).toBeNull();
-  });
-
-  it('keeps the lifetime tier out of the interval switch', () => {
-    render(
-      <PlansComparison
-        availablePlans={[...WITH_YEARLY, plan('purchase', 'lifetime', 199, 'price_storage_1gb')]}
-        userPlan='free'
-        onSubscribe={vi.fn()}
-      />,
-    );
-
-    fireEvent.click(screen.getByText('Yearly'));
-
-    const lifetimeCard = planCard('Lifetime Plan');
-    expect(lifetimeCard.textContent).toContain('On-Demand Purchase');
-    expect(lifetimeCard.textContent).not.toContain('billed yearly');
   });
 });

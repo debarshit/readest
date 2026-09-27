@@ -1010,14 +1010,14 @@ export const SHOW_UNREAD_STATUS_BADGE = false;
 
 export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
   free: 500 * 1024 * 1024,
-  plus: 5 * 1024 * 1024 * 1024,
+  plus: 10 * 1024 * 1024 * 1024,
   pro: 20 * 1024 * 1024 * 1024,
   purchase: 0,
 };
 
 export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
   free: 10 * 1024,
-  plus: 100 * 1024,
+  plus: 150 * 1024,
   pro: 500 * 1024,
   purchase: 0,
 };

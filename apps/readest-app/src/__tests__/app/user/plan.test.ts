@@ -88,7 +88,7 @@ describe('getPlanDetails', () => {
 
     it('should use default price when no matching plan found', () => {
       const result = getPlanDetails('plus', []);
-      expect(result.price).toBe(499);
+      expect(result.price).toBe(399);
     });
 
     it('should include expected features', () => {
@@ -157,9 +157,9 @@ describe('getPlanDetails', () => {
       expect(proStorageKey).toBeDefined();
       expect(plusStorageKey).toBeDefined();
 
-      // Pro should have 20 GB, Plus should have 5 GB
+      // Pro should have 20 GB, Plus should have 10 GB
       expect(proResult.limits![proStorageKey!]).toBe('20 GB');
-      expect(plusResult.limits![plusStorageKey!]).toBe('5 GB');
+      expect(plusResult.limits![plusStorageKey!]).toBe('10 GB');
     });
   });
 

@@ -12,7 +12,7 @@ interface PlansComparisonProps {
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
 }
 
-const PLAN_ORDER: UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
+const PLAN_ORDER: UserPlan[] = ['free', 'plus'];
 const RECOMMENDED_PLAN: UserPlan = 'plus';
 
 const PlansComparison: React.FC<PlansComparisonProps> = ({
