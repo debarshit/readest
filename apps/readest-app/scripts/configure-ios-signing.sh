@@ -42,6 +42,14 @@ cat << EOF > src-tauri/gen/apple/ExportOptions.plist
 </plist>
 EOF
 
+echo "==> Updating CFBundleVersion to $BUILD_NUM in Info.plist files"
+for plist in $(find src-tauri/gen/apple -name "Info.plist" 2>/dev/null); do
+    if [ -f "$plist" ]; then
+        echo "    Updating $plist"
+        plutil -replace CFBundleVersion -string "$BUILD_NUM" "$plist" || true
+    fi
+done
+
 if [ -f "src-tauri/gen/apple/project.yml" ]; then
     echo "==> Updating project.yml and regenerating Xcode project"
     if [[ "$OSTYPE" == "darwin"* ]]; then

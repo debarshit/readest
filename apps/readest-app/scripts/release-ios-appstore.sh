@@ -5,7 +5,12 @@
 # how 0.11.18 shipped with a dead widget despite the guard existing).
 set -euo pipefail
 
-pnpm tauri ios build --export-method app-store-connect
+BUILD_ARG=""
+if [ -n "${BUILD_NUMBER:-}" ]; then
+  BUILD_ARG="--build-number $BUILD_NUMBER"
+fi
+
+pnpm tauri ios build --export-method app-store-connect $BUILD_ARG
 
 BUNDLE_DIR=src-tauri/gen/apple/build/arm64
 IPA_BUNDLE=$BUNDLE_DIR/Readest.ipa
