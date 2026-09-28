@@ -194,16 +194,21 @@ const ProfilePage = () => {
   );
 
   const handleIAPSubscribe = async (productId?: string) => {
-    if (!productId) return;
+    const targetProductId = productId || 'com.biblophile.yomi.plus.monthly';
 
     setLoading(true);
     try {
-      const purchase = await purchaseIAPProduct(productId);
+      const purchase = await purchaseIAPProduct(targetProductId);
       if (purchase) {
         router.push(getIAPSubscriptionSuccessUrl(purchase));
       }
     } catch (error) {
       console.error('IAP purchase error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message: _('Failed to complete purchase: {{error}}', { error: errorMessage }),
+      });
     } finally {
       setLoading(false);
     }

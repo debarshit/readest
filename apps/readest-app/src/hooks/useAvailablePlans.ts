@@ -4,12 +4,12 @@ import { fetchStripePlans } from '@/libs/payment/stripe/client';
 import { AvailablePlan } from '@/types/quota';
 import { stubTranslation as _ } from '@/utils/misc';
 
-const IAP_PRODUCT_IDS = ['com.biblophile.yomi.monthly.plus', 'com.biblophile.yomi.yearly.plus'];
+const IAP_PRODUCT_IDS = ['com.biblophile.yomi.plus.monthly', 'com.biblophile.yomi.plus.yearly'];
 
 const WEB_DISPLAY_PLANS: AvailablePlan[] = [
   {
     plan: 'plus',
-    productId: 'com.biblophile.yomi.monthly.plus',
+    productId: 'com.biblophile.yomi.plus.monthly',
     price: 399,
     currency: 'USD',
     interval: 'month',
@@ -17,7 +17,7 @@ const WEB_DISPLAY_PLANS: AvailablePlan[] = [
   },
   {
     plan: 'plus',
-    productId: 'com.biblophile.yomi.yearly.plus',
+    productId: 'com.biblophile.yomi.plus.yearly',
     price: 2999,
     currency: 'USD',
     interval: 'year',

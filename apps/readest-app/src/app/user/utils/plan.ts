@@ -301,7 +301,11 @@ export function getPlanDetails(
         formattedPrice,
         monthlyEquivalentFormatted,
         regionPricing,
-        productId: availablePlan?.productId,
+        productId:
+          availablePlan?.productId ||
+          (interval === 'year'
+            ? 'com.biblophile.yomi.plus.yearly'
+            : 'com.biblophile.yomi.plus.monthly'),
         interval: interval === 'month' ? _('month') : _('year'),
         features: [
           {
