@@ -25,7 +25,7 @@ const BillingIntervalToggle: React.FC<BillingIntervalToggleProps> = ({
       <div
         role='group'
         aria-label={_('Billing interval')}
-        className='bg-base-200 eink-bordered inline-flex items-center gap-1 rounded-full p-1'
+        className='bg-base-200 eink-bordered inline-flex items-center gap-0.5 rounded-full p-0.5'
       >
         {intervals.map((interval) => {
           const selected = interval === value;
@@ -35,7 +35,7 @@ const BillingIntervalToggle: React.FC<BillingIntervalToggleProps> = ({
               onClick={() => onChange(interval)}
               aria-pressed={selected}
               className={clsx(
-                'flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium',
+                'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium',
                 'transition-colors duration-150',
                 'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
                 selected
@@ -49,7 +49,7 @@ const BillingIntervalToggle: React.FC<BillingIntervalToggleProps> = ({
               {interval === 'year' && savingsPercent ? (
                 <span
                   className={clsx(
-                    'rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap',
+                    'rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-tight whitespace-nowrap',
                     'not-eink:bg-primary/10 not-eink:text-primary',
                     'eink:border-base-content eink:text-base-content eink:border',
                   )}

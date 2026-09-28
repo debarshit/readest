@@ -42,14 +42,14 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
 
   return (
     <div className='flex flex-col gap-6'>
-      <div className='flex flex-wrap items-center justify-between gap-3 px-4 sm:px-0'>
+      <div className='flex items-center justify-between gap-2 px-4 sm:px-0'>
         <BillingIntervalToggle
           intervals={intervals}
           value={selectedInterval}
           savingsPercent={savingsPercent}
           onChange={setInterval}
         />
-        <div className='ml-auto'>
+        <div className='ml-auto shrink-0'>
           <RegionSelector selectedRegion={selectedRegion} onSelectRegion={handleRegionChange} />
         </div>
       </div>
