@@ -104,7 +104,7 @@ describe('AboutWindow version label', () => {
     fireEvent.click(label);
 
     await waitFor(() => expect(mockWriteTextToClipboard).toHaveBeenCalledTimes(1));
-    expect(mockWriteTextToClipboard).toHaveBeenCalledWith('Readest 0.11.20 (Chrome 148)');
+    expect(mockWriteTextToClipboard).toHaveBeenCalledWith('Yomi 0.11.20 (Chrome 148)');
   });
 
   it('upgrades the label with the native webview version when available', async () => {
@@ -116,9 +116,7 @@ describe('AboutWindow version label', () => {
     fireEvent.click(label);
 
     await waitFor(() => expect(mockWriteTextToClipboard).toHaveBeenCalledTimes(1));
-    expect(mockWriteTextToClipboard).toHaveBeenCalledWith(
-      'Readest 0.11.20 (WebView2 152.0.4191.66)',
-    );
+    expect(mockWriteTextToClipboard).toHaveBeenCalledWith('Yomi 0.11.20 (WebView2 152.0.4191.66)');
   });
 
   it('keeps the UA-derived label when the native query fails', async () => {
@@ -130,7 +128,7 @@ describe('AboutWindow version label', () => {
     fireEvent.click(label);
 
     await waitFor(() => expect(mockWriteTextToClipboard).toHaveBeenCalledTimes(1));
-    expect(mockWriteTextToClipboard).toHaveBeenCalledWith('Readest 0.11.20 (Chrome 148)');
+    expect(mockWriteTextToClipboard).toHaveBeenCalledWith('Yomi 0.11.20 (Chrome 148)');
   });
 
   it('shows a toast confirming the copy', async () => {

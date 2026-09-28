@@ -105,8 +105,7 @@ export const AboutWindow = () => {
     setUpdateStatus(null);
   };
 
-  // const versionInfo = `${_('Version {{version}}', { version: getAppVersion() })} (${browserInfo})`;
-  const versionInfo = '0.0.0';
+  const versionInfo = `${_('Version {{version}}', { version: getAppVersion() })} (${browserInfo})`;
 
   // Mobile users can't select the version string to paste it into a bug
   // report (#5285), so tapping the label copies it. The label itself stays
