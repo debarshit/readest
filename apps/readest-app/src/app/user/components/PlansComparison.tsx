@@ -42,7 +42,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
 
   return (
     <div className='flex flex-col gap-6'>
-      <div className='flex flex-wrap items-center justify-between gap-3'>
+      <div className='flex flex-wrap items-center justify-between gap-3 px-4 sm:px-0'>
         <BillingIntervalToggle
           intervals={intervals}
           value={selectedInterval}
@@ -54,19 +54,23 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
         </div>
       </div>
 
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+      <div className='flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 pt-1 px-4 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 sm:pt-0 sm:px-0'>
         {allPlans.map((plan, index) => (
-          <PlanCard
+          <div
             key={plan.plan}
-            plan={plan}
-            interval={selectedInterval}
-            isUserPlan={plan.plan === userPlan}
-            recommended={plan.plan === RECOMMENDED_PLAN}
-            canSwitchInterval={intervals.length > 1}
-            customizationPurchased={customizationPurchased}
-            upgradable={index > 0 && (index > userPlanIndex || userPlan === 'purchase')}
-            onSubscribe={onSubscribe}
-          />
+            className='w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-auto sm:max-w-none sm:shrink sm:snap-align-none flex flex-col h-full'
+          >
+            <PlanCard
+              plan={plan}
+              interval={selectedInterval}
+              isUserPlan={plan.plan === userPlan}
+              recommended={plan.plan === RECOMMENDED_PLAN}
+              canSwitchInterval={intervals.length > 1}
+              customizationPurchased={customizationPurchased}
+              upgradable={index > 0 && (index > userPlanIndex || userPlan === 'purchase')}
+              onSubscribe={onSubscribe}
+            />
+          </div>
         ))}
       </div>
     </div>
