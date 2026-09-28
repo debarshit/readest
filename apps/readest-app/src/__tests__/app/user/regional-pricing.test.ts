@@ -109,6 +109,20 @@ describe('regionalPricing', () => {
     expect(yearlyPlus.monthlyEquivalentFormatted).toBe('₹83.25');
   });
 
+  it('populates regional currency and formatted zero into getPlanDetails for free tier', () => {
+    const indiaPricing = YOMI_REGIONAL_PRICING.IN;
+    const freePlanIndia = getPlanDetails('free', [], 'month', indiaPricing);
+    expect(freePlanIndia.currency).toBe('INR');
+    expect(freePlanIndia.price).toBe(0);
+    expect(freePlanIndia.formattedPrice).toBe('₹0');
+    expect(freePlanIndia.monthlyEquivalentFormatted).toBe('₹0');
+
+    const euPricing = YOMI_REGIONAL_PRICING.EU;
+    const freePlanEU = getPlanDetails('free', [], 'month', euPricing);
+    expect(freePlanEU.currency).toBe('EUR');
+    expect(freePlanEU.formattedPrice).toBe('€0');
+  });
+
   it('returns regional savings percent when availablePlans is empty', () => {
     const indiaPricing = YOMI_REGIONAL_PRICING.IN;
     expect(getYearlySavingsPercent([], indiaPricing)).toBe(44);

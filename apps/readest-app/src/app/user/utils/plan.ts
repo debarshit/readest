@@ -166,8 +166,7 @@ export function getPlanDetails(
   const availablePlan = availablePlans.find(
     (plan) => plan.plan === planCode && (!plan.interval || plan.interval === interval),
   );
-  const currency =
-    availablePlans?.[0]?.currency ?? (regionPricing ? regionPricing.currency : 'USD');
+  const currency = regionPricing?.currency ?? availablePlans?.[0]?.currency ?? 'USD';
   switch (planCode) {
     case 'purchase': {
       const purchasableProducts: ProductInfo[] = availablePlans
@@ -215,7 +214,8 @@ export function getPlanDetails(
         products: purchasableProducts,
       };
     }
-    case 'free':
+    case 'free': {
+      const freeFormatted = regionPricing ? `${regionPricing.currencySymbol.trim()}0` : undefined;
       return {
         name: _('Free Plan'),
         plan: planCode,
@@ -224,6 +224,9 @@ export function getPlanDetails(
         hintColor: 'text-base-content/60',
         price: 0,
         currency,
+        formattedPrice: freeFormatted,
+        monthlyEquivalentFormatted: freeFormatted,
+        regionPricing,
         productId: availablePlan?.productId,
         interval: interval === 'month' ? _('month') : _('year'),
         features: [
@@ -263,6 +266,7 @@ export function getPlanDetails(
           [_('AI Translations (per day)')]: '10K',
         },
       };
+    }
     case 'plus': {
       const isCustomStripePlan =
         availablePlan?.productId && !availablePlan.productId.startsWith('com.biblophile.yomi');
