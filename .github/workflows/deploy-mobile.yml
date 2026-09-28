@@ -131,10 +131,9 @@ jobs:
           IOS_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           IOS_MOBILE_PROVISION: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
-          BUILD_NUMBER: ${{ github.run_number }}
         run: |
           cd apps/readest-app
-          pnpm run build-ios-appstore --build-number "${{ github.run_number }}"
+          pnpm run build-ios-appstore
           IPA_PATH=$(find src-tauri/gen/apple/build/arm64 -name "*.ipa" | head -n 1)
           if [ -z "$IPA_PATH" ]; then
             echo "::error::No IPA found in src-tauri/gen/apple/build/arm64"

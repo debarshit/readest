@@ -31,12 +31,6 @@ if [ -z "$APP" ] || [ ! -d "$APP" ]; then
   exit 1
 fi
 
-if [ -f "$APP/Info.plist" ]; then
-  app_ver=$(plutil -extract CFBundleShortVersionString raw "$APP/Info.plist" 2>/dev/null || echo "unknown")
-  bundle_ver=$(plutil -extract CFBundleVersion raw "$APP/Info.plist" 2>/dev/null || echo "unknown")
-  echo "App Bundle Info: CFBundleShortVersionString=$app_ver, CFBundleVersion=$bundle_ver"
-fi
-
 fail=0
 for ext in "${EXTS[@]}"; do
   appex="$APP/PlugIns/$ext.appex"
