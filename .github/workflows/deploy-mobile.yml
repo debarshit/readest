@@ -105,6 +105,7 @@ jobs:
       - name: Create .env.local for Next.js
         run: |
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_DIST_CHANNEL=appstore" >> apps/readest-app/.env.local
           echo "NEXT_PUBLIC_BIBLO_API_URL=${{ secrets.NEXT_PUBLIC_BIBLO_API_URL }}" >> apps/readest-app/.env.local
           echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> apps/readest-app/.env.local
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> apps/readest-app/.env.local
@@ -225,6 +226,7 @@ jobs:
       - name: Create .env.local for Next.js
         run: |
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > apps/readest-app/.env.local
+          echo "NEXT_PUBLIC_DIST_CHANNEL=playstore" >> apps/readest-app/.env.local
           echo "NEXT_PUBLIC_BIBLO_API_URL=${{ secrets.NEXT_PUBLIC_BIBLO_API_URL }}" >> apps/readest-app/.env.local
           echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> apps/readest-app/.env.local
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> apps/readest-app/.env.local
