@@ -145,19 +145,20 @@ export class AppleIAPVerifier {
 
 export const createAppleIAPVerifier = (config: AppleIAPConfig) => new AppleIAPVerifier(config);
 
-let defaultIAPVerifier: AppleIAPVerifier | undefined;
-export const getAppleIAPVerifier = () => {
-  if (!defaultIAPVerifier) {
-    defaultIAPVerifier = createAppleIAPVerifier({
-      keyId: process.env['APPLE_IAP_KEY_ID']!,
-      issuerId: process.env['APPLE_IAP_ISSUER_ID']!,
-      bundleId: process.env['APPLE_IAP_BUNDLE_ID']!,
-      privateKey: Buffer.from(
-        process.env['APPLE_IAP_PRIVATE_KEY_BASE64']! || '',
-        'base64',
-      ).toString('utf-8'),
-      environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
-    });
-  }
-  return defaultIAPVerifier;
+/**
+ * Create an Apple IAP verifier for the given environment.
+ * Not cached as a singleton — prod and sandbox need separate clients and
+ * the route tries prod first then falls back to sandbox.
+ */
+export const getAppleIAPVerifier = (environment?: 'production' | 'sandbox') => {
+  const env = environment ?? (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox');
+  return createAppleIAPVerifier({
+    keyId: process.env['APPLE_IAP_KEY_ID']!,
+    issuerId: process.env['APPLE_IAP_ISSUER_ID']!,
+    bundleId: process.env['APPLE_IAP_BUNDLE_ID']!,
+    privateKey: Buffer.from(process.env['APPLE_IAP_PRIVATE_KEY_BASE64']! || '', 'base64').toString(
+      'utf-8',
+    ),
+    environment: env,
+  });
 };

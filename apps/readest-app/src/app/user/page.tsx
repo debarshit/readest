@@ -25,6 +25,7 @@ import {
   verifyGooglePurchaseProducts,
   getSubscriptionSuccessUrl as getIAPSubscriptionSuccessUrl,
 } from '@/libs/payment/iap/client';
+import { restoreAndRegisterPurchases } from '@/libs/payment/iap/restore';
 import { isPurchaseProduct } from '@/libs/payment/iap/utils';
 import {
   createStripeCheckoutSession,
@@ -84,7 +85,22 @@ const ProfilePage = () => {
     if (!mounted) return;
 
     const isAuthenticated = user && token && appService;
-    if (isAuthenticated) return;
+    if (isAuthenticated) {
+      // Silently recover any subscription whose registration was lost mid-flight
+      // (network drop, app crash, or server error during the original verify call).
+      // Fire-and-forget — does not block the UI.
+      if (appService?.hasIAP) {
+        restoreAndRegisterPurchases()
+          .then(({ restored, productId }) => {
+            if (restored) {
+              console.log(`[startup] Recovered unregistered subscription: ${productId}`);
+              refresh();
+            }
+          })
+          .catch((e) => console.error('[startup] restoreAndRegisterPurchases failed:', e));
+      }
+      return;
+    }
 
     const timer = setTimeout(() => {
       router.push('/auth?redirect=/library');

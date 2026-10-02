@@ -13,7 +13,7 @@ import { IAPError } from '@/libs/payment/iap/types';
 const iapVerificationSchema = z.object({
   packageName: z.string().min(1, 'Package name is required'),
   productId: z.string().min(1, 'Product ID is required'),
-  orderId: z.string().min(1, 'Order ID is required'),
+  orderId: z.string().optional().default(''),
   purchaseToken: z.string().min(1, 'Purchase token is required'),
 });
 

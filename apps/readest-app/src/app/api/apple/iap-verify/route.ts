@@ -34,10 +34,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    const defaultIAPVerifier = getAppleIAPVerifier();
-    const verificationResult = await defaultIAPVerifier.verifyTransaction(originalTransactionId);
+    // Try production first; fall back to sandbox for TestFlight / sandbox testers.
+    // The same private key works for both environments.
+    let verificationResult =
+      await getAppleIAPVerifier('production').verifyTransaction(originalTransactionId);
+
     if (!verificationResult.success) {
-      console.error('Apple verification failed:', verificationResult.error);
+      console.warn(
+        '[apple-iap] Production verification failed, trying sandbox:',
+        verificationResult.error,
+      );
+      verificationResult =
+        await getAppleIAPVerifier('sandbox').verifyTransaction(originalTransactionId);
+    }
+
+    if (!verificationResult.success) {
+      console.error('Apple verification failed (prod + sandbox):', verificationResult.error);
       return NextResponse.json(
         {
           error: verificationResult.error || IAPError.TRANSACTION_CANNOT_BE_VERIFIED,

@@ -8,11 +8,8 @@ import { getAPIBaseUrl, getNodeAPIBaseUrl } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
 import { PlanType } from '@/types/quota';
 import { VerifiedIAP } from '@/libs/payment/iap/types';
+import { restoreAndRegisterPurchases } from '@/libs/payment/iap/restore';
 import Spinner from '@/components/Spinner';
-
-const STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
-const APPLE_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/apple/iap-verify`;
-const ANDROID_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/google/iap-verify`;
 
 interface SessionStatus {
   status: 'loading' | 'completed' | 'failed' | 'processing';
@@ -51,6 +48,11 @@ const SuccessPageWithSearchParams = () => {
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // build URLs inside the component, not at module scope.
+  const STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
+  const APPLE_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/apple/iap-verify`;
+  const ANDROID_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/google/iap-verify`;
 
   const updateStripeSessionStatus = async () => {
     try {
@@ -137,7 +139,9 @@ const SuccessPageWithSearchParams = () => {
         planType: purchase.planType,
       });
 
-      refresh();
+      // delay refresh so Supabase has time to propagate the
+      // updated plan claim into the JWT before the client re-fetches the session.
+      setTimeout(() => refresh(), 2000);
     } catch (error) {
       console.error('Failed to verify IAP transaction:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -195,7 +199,9 @@ const SuccessPageWithSearchParams = () => {
         currency: purchase.currency,
       });
 
-      refresh();
+      // delay refresh so Supabase has time to propagate the
+      // updated plan claim into the JWT before the client re-fetches the session.
+      setTimeout(() => refresh(), 2000);
     } catch (error) {
       console.error('Failed to verify Android IAP transaction:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -205,8 +211,9 @@ const SuccessPageWithSearchParams = () => {
   const updateIAPSessionStatus = async () => {
     if (platform === 'ios' && transactionId && originalTransactionId) {
       await updateIOSIAPSessionStatus(transactionId, originalTransactionId);
-    } else if (platform === 'android' && orderId && purchaseToken && productId && packageName) {
-      await updateAndroidIAPSessionStatus(packageName, productId, orderId, purchaseToken);
+    } else if (platform === 'android' && purchaseToken && productId && packageName) {
+      // orderId is optional — purchaseToken + productId are sufficient for verification
+      await updateAndroidIAPSessionStatus(packageName, productId, orderId ?? '', purchaseToken);
     } else {
       console.error('Invalid IAP platform or missing parameters');
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -223,10 +230,32 @@ const SuccessPageWithSearchParams = () => {
     }
   };
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
     setRetryCount(0);
     setSessionStatus((prev) => ({ ...prev, status: 'loading' }));
-    updateSessionStatus();
+
+    // First try the normal verify flow using the URL params
+    await updateSessionStatus();
+
+    // If still on IAP and the normal verify didn't resolve it (e.g. the original
+    // registration failed mid-flight), ask Apple/Google directly for any active
+    // subscription and register it now. Idempotent — server upserts on conflict.
+    if (payment === 'iap') {
+      try {
+        const { restored } = await restoreAndRegisterPurchases();
+        if (restored) {
+          setSessionStatus({
+            status: 'completed',
+            customerEmail: '',
+            planName: 'Yomi Plus',
+            planType: 'subscription',
+          });
+          setTimeout(() => refresh(), 2000);
+        }
+      } catch (e) {
+        console.error('[retry] restoreAndRegisterPurchases failed:', e);
+      }
+    }
   };
 
   const handleGoToLibrary = () => {
@@ -237,10 +266,20 @@ const SuccessPageWithSearchParams = () => {
     router.push('/user');
   };
 
+  // Include all IAP params in the dep array so the effect re-runs
+  // if search params arrive after initial mount (common in Tauri navigation).
   useEffect(() => {
     updateSessionStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, originalTransactionId, router]);
+  }, [
+    sessionId,
+    originalTransactionId,
+    transactionId,
+    purchaseToken,
+    productId,
+    packageName,
+    router,
+  ]);
 
   useEffect(() => {
     if (sessionStatus.status === 'processing' && retryCount < 3) {

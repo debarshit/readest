@@ -921,7 +921,7 @@ export const YOMI_WEB_BASE_URL = 'https://biblophile.com/yomi';
 export const READEST_WEB_BASE_URL = YOMI_WEB_BASE_URL;
 
 export const YOMI_NODE_BASE_URL =
-  process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'https://api.biblophile.com/api/v0';
+  process.env['NEXT_PUBLIC_YOMI_NODE_BASE_URL'] || 'https://biblophile.com/yomi';
 export const READEST_NODE_BASE_URL = YOMI_NODE_BASE_URL;
 
 export const SHARE_BASE_URL = `${YOMI_WEB_BASE_URL}/s`;
