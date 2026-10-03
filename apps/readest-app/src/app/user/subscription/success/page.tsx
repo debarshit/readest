@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getAPIBaseUrl, getNodeAPIBaseUrl } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
+import { supabase } from '@/utils/supabase';
 import { PlanType } from '@/types/quota';
 import { VerifiedIAP } from '@/libs/payment/iap/types';
 import { restoreAndRegisterPurchases } from '@/libs/payment/iap/restore';
@@ -139,9 +140,14 @@ const SuccessPageWithSearchParams = () => {
         planType: purchase.planType,
       });
 
-      // delay refresh so Supabase has time to propagate the
-      // updated plan claim into the JWT before the client re-fetches the session.
-      setTimeout(() => refresh(), 2000);
+      // Force Supabase to issue a fresh JWT so the custom_access_token_hook
+      // embeds the updated plan claim. supabase.auth.refreshSession() triggers
+      // onAuthStateChange in AuthContext which updates React state immediately —
+      // no logout/login required. refresh() alone is a no-op on mobile.
+      setTimeout(async () => {
+        await supabase.auth.refreshSession();
+        refresh();
+      }, 2000);
     } catch (error) {
       console.error('Failed to verify IAP transaction:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -199,9 +205,14 @@ const SuccessPageWithSearchParams = () => {
         currency: purchase.currency,
       });
 
-      // delay refresh so Supabase has time to propagate the
-      // updated plan claim into the JWT before the client re-fetches the session.
-      setTimeout(() => refresh(), 2000);
+      // Force Supabase to issue a fresh JWT so the custom_access_token_hook
+      // embeds the updated plan claim. supabase.auth.refreshSession() triggers
+      // onAuthStateChange in AuthContext which updates React state immediately —
+      // no logout/login required. refresh() alone is a no-op on mobile.
+      setTimeout(async () => {
+        await supabase.auth.refreshSession();
+        refresh();
+      }, 2000);
     } catch (error) {
       console.error('Failed to verify Android IAP transaction:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -250,7 +261,10 @@ const SuccessPageWithSearchParams = () => {
             planName: 'Yomi Plus',
             planType: 'subscription',
           });
-          setTimeout(() => refresh(), 2000);
+          setTimeout(async () => {
+            await supabase.auth.refreshSession();
+            refresh();
+          }, 2000);
         }
       } catch (e) {
         console.error('[retry] restoreAndRegisterPurchases failed:', e);

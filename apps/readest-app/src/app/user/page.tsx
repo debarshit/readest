@@ -15,6 +15,7 @@ import type { PlanType } from '@/types/quota';
 import { navigateToLibrary } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
+import { supabase } from '@/utils/supabase';
 import { getPlanDetails, shouldUseBillingPortal } from './utils/plan';
 import { detectUserRegion } from './utils/regionalPricing';
 import { Toast } from '@/components/Toast';
@@ -91,9 +92,10 @@ const ProfilePage = () => {
       // Fire-and-forget — does not block the UI.
       if (appService?.hasIAP) {
         restoreAndRegisterPurchases()
-          .then(({ restored, productId }) => {
+          .then(async ({ restored, productId }) => {
             if (restored) {
               console.log(`[startup] Recovered unregistered subscription: ${productId}`);
+              await supabase.auth.refreshSession();
               refresh();
             }
           })
