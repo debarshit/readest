@@ -77,7 +77,14 @@ export const getHighestActiveStripePlan = async (
       .select('stripe_customer_id')
       .eq('user_id', userId)
       .maybeSingle();
-    if (error) throw error;
+    if (error) {
+      // PGRST205: the `customers` table doesn't exist yet (Stripe not yet
+      // configured for this deployment). Treat as "no Stripe customer" rather
+      // than throwing, so IAP verification is not blocked by a missing Stripe
+      // table that is completely unrelated to the current payment flow.
+      if (error.code === 'PGRST205') return 'free';
+      throw error;
+    }
     customerId = data?.stripe_customer_id;
   }
   if (!customerId) return 'free';
