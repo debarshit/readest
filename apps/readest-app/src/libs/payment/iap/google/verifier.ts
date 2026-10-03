@@ -200,10 +200,10 @@ export class GoogleIAPVerifier {
       const startTime = purchase.startTimeMillis ? parseInt(purchase.startTimeMillis) : 0;
 
       let status: IAPStatus = 'expired';
-      if (purchase.paymentState === 1 && (expiryTime === 0 || expiryTime > now)) {
+      if (expiryTime > now) {
+        // paymentState: 1 = received payment, 0 = payment pending / free trial / test.
+        // For sandbox test purchases paymentState is 0 but expiryTime is in the future — treat as active.
         status = 'active';
-      } else if (purchase.paymentState === 0) {
-        status = 'pending';
       } else if (purchase.userCancellationTimeMillis) {
         status = 'cancelled';
       }

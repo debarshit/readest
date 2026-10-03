@@ -61,7 +61,7 @@ const ProfilePage = () => {
   const _ = useTranslation();
   const router = useRouter();
   const { appService } = useEnv();
-  const { token, user, refresh } = useAuth();
+  const { token, user, refresh, login } = useAuth();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
 
   const [loading, setLoading] = useState(false);
@@ -96,6 +96,14 @@ const ProfilePage = () => {
             if (restored) {
               console.log(`[startup] Recovered unregistered subscription: ${productId}`);
               await supabase.auth.refreshSession();
+              const { data } = await supabase.auth.getSession();
+              if (data.session?.access_token && data.session?.user) {
+                login(data.session.access_token, {
+                  id: data.session.user.id,
+                  email: data.session.user.email,
+                  user_metadata: data.session.user.user_metadata,
+                });
+              }
               refresh();
             }
           })

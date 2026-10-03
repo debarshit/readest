@@ -32,7 +32,23 @@ const SuccessPageWithSearchParams = () => {
   const [retryCount, setRetryCount] = useState(0);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { refresh } = useAuth();
+  const { refresh, login } = useAuth();
+
+  // Forcibly refresh the Supabase session and push the new JWT into React state.
+  // supabase.auth.refreshSession() alone may not fire onAuthStateChange reliably on
+  // Tauri mobile, so we also call getSession() and push the new token via login().
+  const forceRefreshSession = async () => {
+    await supabase.auth.refreshSession();
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.access_token && data.session?.user) {
+      login(data.session.access_token, {
+        id: data.session.user.id,
+        email: data.session.user.email,
+        user_metadata: data.session.user.user_metadata,
+      });
+    }
+    refresh();
+  };
   const payment = searchParams?.get('payment');
   const platform = searchParams?.get('platform');
   const sessionId = searchParams?.get('session_id');
@@ -142,14 +158,9 @@ const SuccessPageWithSearchParams = () => {
         planType: purchase.planType,
       });
 
-      // Force Supabase to issue a fresh JWT so the custom_access_token_hook
-      // embeds the updated plan claim. supabase.auth.refreshSession() triggers
-      // onAuthStateChange in AuthContext which updates React state immediately —
-      // no logout/login required. refresh() alone is a no-op on mobile.
-      setTimeout(async () => {
-        await supabase.auth.refreshSession();
-        refresh();
-      }, 2000);
+      // Force Supabase to reissue a JWT with the updated plan claim and push
+      // it into React state synchronously — no logout/login required.
+      setTimeout(forceRefreshSession, 2000);
     } catch (error) {
       console.error('Failed to verify IAP transaction:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -208,14 +219,7 @@ const SuccessPageWithSearchParams = () => {
         currency: purchase.currency,
       });
 
-      // Force Supabase to issue a fresh JWT so the custom_access_token_hook
-      // embeds the updated plan claim. supabase.auth.refreshSession() triggers
-      // onAuthStateChange in AuthContext which updates React state immediately —
-      // no logout/login required. refresh() alone is a no-op on mobile.
-      setTimeout(async () => {
-        await supabase.auth.refreshSession();
-        refresh();
-      }, 2000);
+      setTimeout(forceRefreshSession, 2000);
     } catch (error) {
       console.error('Failed to verify Android IAP transaction:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -264,10 +268,7 @@ const SuccessPageWithSearchParams = () => {
             planName: 'Yomi Plus',
             planType: 'subscription',
           });
-          setTimeout(async () => {
-            await supabase.auth.refreshSession();
-            refresh();
-          }, 2000);
+          setTimeout(forceRefreshSession, 2000);
         }
       } catch (e) {
         console.error('[retry] restoreAndRegisterPurchases failed:', e);
