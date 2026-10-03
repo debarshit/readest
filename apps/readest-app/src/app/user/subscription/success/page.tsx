@@ -42,7 +42,9 @@ const SuccessPageWithSearchParams = () => {
   const originalTransactionId = searchParams?.get('original_transaction_id');
 
   // Android parameters
-  const packageName = searchParams?.get('package_name');
+  const rawPackageName = searchParams?.get('package_name');
+  const packageName =
+    rawPackageName && rawPackageName.trim() !== '' ? rawPackageName : 'com.biblophile.yomi';
   const productId = searchParams?.get('product_id');
   const purchaseToken = searchParams?.get('purchase_token');
   const orderId = searchParams?.get('order_id');
@@ -155,12 +157,13 @@ const SuccessPageWithSearchParams = () => {
   };
 
   const updateAndroidIAPSessionStatus = async (
-    packageName: string,
+    pkgName: string,
     productId: string,
     orderId: string,
     purchaseToken: string,
   ) => {
-    if (!purchaseToken || !productId || !packageName) {
+    const effectivePackageName = pkgName || 'com.biblophile.yomi';
+    if (!purchaseToken || !productId) {
       console.error('Missing required Android IAP parameters');
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
       return;
@@ -178,7 +181,7 @@ const SuccessPageWithSearchParams = () => {
           purchaseToken,
           orderId,
           productId,
-          packageName,
+          packageName: effectivePackageName,
         }),
       });
 
@@ -222,8 +225,8 @@ const SuccessPageWithSearchParams = () => {
   const updateIAPSessionStatus = async () => {
     if (platform === 'ios' && transactionId && originalTransactionId) {
       await updateIOSIAPSessionStatus(transactionId, originalTransactionId);
-    } else if (platform === 'android' && purchaseToken && productId && packageName) {
-      // orderId is optional — purchaseToken + productId are sufficient for verification
+    } else if (platform === 'android' && purchaseToken && productId) {
+      // orderId and packageName are optional — purchaseToken + productId are sufficient for verification
       await updateAndroidIAPSessionStatus(packageName, productId, orderId ?? '', purchaseToken);
     } else {
       console.error('Invalid IAP platform or missing parameters');

@@ -13,7 +13,7 @@ export const getPurchaseVerifyParams = (purchase: IAPPurchase) => {
     product_id: purchase.productId,
     transaction_id: purchase.transactionId || '',
     original_transaction_id: purchase.originalTransactionId || '',
-    package_name: purchase.packageName || '',
+    package_name: purchase.packageName || 'com.biblophile.yomi',
     order_id: purchase.orderId || '',
     purchase_token: purchase.purchaseToken || '',
   });
@@ -64,7 +64,7 @@ export const verifyGooglePurchaseProducts = async (purchases: IAPPurchase[]) => 
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            packageName: purchase.packageName,
+            packageName: purchase.packageName || 'com.biblophile.yomi',
             productId: purchase.productId,
             orderId: purchase.orderId,
             purchaseToken: purchase.purchaseToken,

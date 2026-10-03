@@ -520,6 +520,7 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
             purchaseToken = purchase.purchaseToken,
             purchaseDate = dateFormat.format(Date(purchase.purchaseTime)),
             purchaseState = state,
+            packageName = activity.packageName,
         )
     }
 }

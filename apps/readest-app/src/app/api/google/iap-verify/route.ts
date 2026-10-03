@@ -11,7 +11,10 @@ import { isConsumablePurchase } from '@/libs/payment/iap/utils';
 import { IAPError } from '@/libs/payment/iap/types';
 
 const iapVerificationSchema = z.object({
-  packageName: z.string().min(1, 'Package name is required'),
+  packageName: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.trim().length > 0 ? val.trim() : 'com.biblophile.yomi')),
   productId: z.string().min(1, 'Product ID is required'),
   orderId: z.string().optional().default(''),
   purchaseToken: z.string().min(1, 'Purchase token is required'),

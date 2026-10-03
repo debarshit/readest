@@ -201,7 +201,8 @@ data class PurchaseData(
     val purchaseToken: String,
     val purchaseDate: String,
     val purchaseState: String,
-    val platform: String = "android"
+    val platform: String = "android",
+    val packageName: String = ""
 )
 
 interface KeyDownInterceptor {

@@ -78,7 +78,7 @@ export async function restoreAndRegisterPurchases(): Promise<{
               purchaseToken: purchase.purchaseToken,
               orderId: purchase.orderId || '',
               productId: purchase.productId,
-              packageName: purchase.packageName,
+              packageName: purchase.packageName || 'com.biblophile.yomi',
             }),
           });
 
