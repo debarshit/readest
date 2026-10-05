@@ -87,6 +87,22 @@ const ProfilePage = () => {
 
     const isAuthenticated = user && token && appService;
     if (isAuthenticated) {
+      // Refresh session on profile mount to sync any updated plan claims
+      // (recent purchase, cancellation, or expiry) into React state.
+      supabase.auth
+        .refreshSession()
+        .then(async ({ data: refreshData }) => {
+          if (refreshData.session?.access_token && refreshData.session?.user) {
+            login(refreshData.session.access_token, {
+              id: refreshData.session.user.id,
+              email: refreshData.session.user.email,
+              user_metadata: refreshData.session.user.user_metadata,
+            });
+            refresh();
+          }
+        })
+        .catch((e) => console.warn('[user] session refresh on profile mount failed:', e));
+
       // Silently recover any subscription whose registration was lost mid-flight
       // (network drop, app crash, or server error during the original verify call).
       // Fire-and-forget — does not block the UI.

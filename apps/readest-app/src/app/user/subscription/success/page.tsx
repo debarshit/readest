@@ -160,7 +160,7 @@ const SuccessPageWithSearchParams = () => {
 
       // Force Supabase to reissue a JWT with the updated plan claim and push
       // it into React state synchronously — no logout/login required.
-      setTimeout(forceRefreshSession, 2000);
+      await forceRefreshSession();
     } catch (error) {
       console.error('Failed to verify IAP transaction:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -219,7 +219,7 @@ const SuccessPageWithSearchParams = () => {
         currency: purchase.currency,
       });
 
-      setTimeout(forceRefreshSession, 2000);
+      await forceRefreshSession();
     } catch (error) {
       console.error('Failed to verify Android IAP transaction:', error);
       setSessionStatus((prev) => ({ ...prev, status: 'failed' }));
@@ -268,7 +268,7 @@ const SuccessPageWithSearchParams = () => {
             planName: 'Yomi Plus',
             planType: 'subscription',
           });
-          setTimeout(forceRefreshSession, 2000);
+          await forceRefreshSession();
         }
       } catch (e) {
         console.error('[retry] restoreAndRegisterPurchases failed:', e);
@@ -276,11 +276,13 @@ const SuccessPageWithSearchParams = () => {
     }
   };
 
-  const handleGoToLibrary = () => {
+  const handleGoToLibrary = async () => {
+    await forceRefreshSession();
     router.push('/library');
   };
 
-  const handleGoToProfile = () => {
+  const handleGoToProfile = async () => {
+    await forceRefreshSession();
     router.push('/user');
   };
 
