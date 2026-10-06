@@ -349,27 +349,58 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <div className='flex flex-wrap gap-2 max-h-24 overflow-y-auto'>
           {activeBuddyRead.members?.map((member: any) => {
             const isSelf = member.userId === activeBuddyRead.hostUserId;
+            const isMe =
+              (member.supabaseUserId && member.supabaseUserId === user?.id) ||
+              (member.userId && member.userId === (user as any)?.userId);
+
+            const displayName =
+              member.user_name ||
+              member.userName ||
+              member.name ||
+              (isSelf ? _('Host') : _('Reader'));
+
+            const avatarUrl = member.profilePic;
+
+            // Find latest progress from comments as fallback
+            const latestMemberComment = [...comments]
+              .reverse()
+              .find(
+                (c) =>
+                  (member.userId && c.userId === member.userId) ||
+                  (member.supabaseUserId && c.supabaseUserId === member.supabaseUserId),
+              );
+            const commentProgress = latestMemberComment?.progressPercentage;
+
+            const baseProgress =
+              member.progressPercentage ?? member.progress_percentage ?? commentProgress ?? 0;
+
+            const effectiveProgress = isMe
+              ? Math.max(baseProgress, currentProgressPercent)
+              : baseProgress;
+
+            const initial = displayName ? displayName.trim().charAt(0).toUpperCase() : '?';
+
             return (
               <div
-                key={member.userId}
+                key={member.userId || member.supabaseUserId || displayName}
                 className='flex items-center gap-1.5 px-2.5 py-1 bg-base-300/60 rounded-full text-xs font-medium'
               >
-                {member.user_avatar ? (
+                {avatarUrl ? (
                   <img
-                    src={member.user_avatar}
-                    alt={member.user_name}
+                    src={avatarUrl}
+                    alt={displayName}
                     className='w-4 h-4 rounded-full object-cover'
                   />
                 ) : (
                   <div className='w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] uppercase font-bold'>
-                    {member.user_name?.slice(0, 1)}
+                    {initial}
                   </div>
                 )}
-                <span className='truncate max-w-[80px]'>
-                  {member.user_name} {isSelf && `(${_('Host')})`}
+                <span className='truncate max-w-[80px]' title={displayName}>
+                  {displayName} {isSelf && `(${_('Host')})`}
                 </span>
                 <span className='badge badge-ghost badge-sm text-[10px] px-1 ml-0.5 bg-base-100/50'>
-                  {member.progressPercentage ?? 0}%
+                  {effectiveProgress}%
                 </span>
               </div>
             );

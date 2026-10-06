@@ -116,7 +116,7 @@ export const useBuddyReadStore = create<BuddyReadState>((set, get) => ({
           page_number: pageNumber,
         }),
       });
-      await get().fetchComments(id);
+      await Promise.all([get().fetchComments(id), get().fetchBuddyReadDetails(id)]);
     } catch (err) {
       console.error('Failed to post comment:', err);
       throw err;
