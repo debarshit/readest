@@ -276,13 +276,11 @@ const SuccessPageWithSearchParams = () => {
     }
   };
 
-  const handleGoToLibrary = async () => {
-    await forceRefreshSession();
+  const handleGoToLibrary = () => {
     router.push('/library');
   };
 
-  const handleGoToProfile = async () => {
-    await forceRefreshSession();
+  const handleGoToProfile = () => {
     router.push('/user');
   };
 
