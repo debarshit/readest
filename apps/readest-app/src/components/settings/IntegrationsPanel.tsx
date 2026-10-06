@@ -8,7 +8,6 @@ import {
   RiRssLine,
   RiBookReadLine,
   RiBook3Line,
-  RiBookmark3Line,
   RiFileList3Line,
   RiDiscordLine,
   RiSendPlaneLine,
@@ -49,7 +48,6 @@ import BookOrbitForm from './integrations/BookOrbitForm';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
-import PageboundForm from './integrations/PageboundForm';
 import NotionForm from './integrations/NotionForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
 import LocalSendForm from './integrations/LocalSendForm';
@@ -414,12 +412,6 @@ const IntegrationsPanel: React.FC = () => {
         <HardcoverForm onBack={() => setSubPage(null)} />
       </div>
     );
-  if (subPage === 'pagebound')
-    return (
-      <div className='my-4 w-full'>
-        <PageboundForm onBack={() => setSubPage(null)} />
-      </div>
-    );
   if (subPage === 'notion')
     return (
       <div className='my-4 w-full'>
@@ -471,10 +463,6 @@ const IntegrationsPanel: React.FC = () => {
 
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
-  const pageboundStatus =
-    settings.pagebound?.enabled && settings.pagebound.refreshToken
-      ? _('Connected')
-      : _('Not connected');
   const notionStatus =
     settings.notion?.enabled && settings.notion.accessToken && settings.notion.databaseId
       ? _('Connected')
@@ -630,15 +618,6 @@ const IntegrationsPanel: React.FC = () => {
               status={hardcoverStatus}
               onClick={() => setSubPage('hardcover')}
             />
-            {/* Pagebound's API sends no CORS headers, so only native HTTP reaches it. */}
-            {isTauriAppPlatform() && (
-              <IntegrationRow
-                icon={RiBookmark3Line}
-                title={_('Pagebound')}
-                status={pageboundStatus}
-                onClick={() => setSubPage('pagebound')}
-              />
-            )}
             <IntegrationRow
               icon={RiFileList3Line}
               title={_('Notion')}
