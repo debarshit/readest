@@ -2,7 +2,8 @@
 
 import clsx from 'clsx';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -12,7 +13,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
 import { useAvailablePlans } from '@/hooks/useAvailablePlans';
 import type { PlanType } from '@/types/quota';
-import { navigateToLibrary } from '@/utils/nav';
+import { navigateBackFromProfile } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { supabase } from '@/utils/supabase';
@@ -59,7 +60,7 @@ type CheckoutState = {
 
 const ProfilePage = () => {
   const _ = useTranslation();
-  const router = useRouter();
+  const router = useAppRouter();
   const { appService } = useEnv();
   const { token, user, refresh, login } = useAuth();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
@@ -134,11 +135,12 @@ const ProfilePage = () => {
     }
 
     const timer = setTimeout(() => {
-      router.push('/auth?redirect=/library');
+      const redirect = searchParams?.get('redirect') || '/library';
+      router.push(`/auth?redirect=${encodeURIComponent(redirect)}`);
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [mounted, user, token, appService, router]);
+  }, [mounted, user, token, appService, router, searchParams]);
 
   useTheme({ systemUIVisible: false });
 
@@ -175,7 +177,7 @@ const ProfilePage = () => {
     } else if (showSyncManager) {
       setShowSyncManager(false);
     } else {
-      navigateToLibrary(router);
+      navigateBackFromProfile(router, searchParams?.get('redirect'));
     }
   };
 
@@ -185,9 +187,6 @@ const ProfilePage = () => {
   ) => {
     if (!productId) return;
 
-    // Someone who already holds a subscription changes plan or billing period
-    // in the billing portal. Opening a second checkout session would leave the
-    // old subscription running alongside the new one and bill them twice.
     if (shouldUseBillingPortal(userProfilePlan, planType)) {
       await openStripePortal('subscription_update');
       return;
@@ -231,6 +230,7 @@ const ProfilePage = () => {
       setLoading(false);
     }
   };
+  void _handleStripeSubscribe;
 
   const handleCheckoutSuccess = useCallback(
     (sessionId: string) => {

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { MdEdit, MdDelete, MdContentCopy } from 'react-icons/md';
 
 import { useEnv } from '@/context/EnvContext';
@@ -11,11 +11,13 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useLongPress } from '@/hooks/useLongPress';
 import { eventDispatcher } from '@/utils/event';
 import { isCfiInLocation } from '@/utils/cfi';
 import { buildAnnotationUrl } from '@/utils/deeplink';
 import { buildAnnotationCopyMarkdown } from '@/utils/note';
 import { writeTextToClipboard } from '@/utils/clipboard';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { BRAND_NAME } from '@/services/branding';
 import { removeBookNoteOverlays } from '../../utils/annotatorUtil';
@@ -42,7 +44,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   inlineNoteEditing,
 }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
@@ -68,7 +70,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     const { booknotes: annotations = [] } = config;
     const existingIndex = annotations.findIndex((annotation) => item.id === annotation.id);
     if (existingIndex === -1) return;
-    annotations[existingIndex]!.updatedAt = Date.now();
+    annotations[existingIndex]!.updatedAt = nextBooknoteStamp(annotations[existingIndex]!);
     annotations[existingIndex]!.text = draftText;
     const updatedConfig = updateBooknotes(bookKey, annotations);
     if (updatedConfig) {
@@ -98,8 +100,29 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   // item.note and bust the cache automatically.
   const noteHtml = useMemo(() => (note ? parseNoteMarkdown(note) : ''), [note]);
 
+  // iOS WebKit applies :hover at touchstart, so every scroll touch would expand
+  // the card under the finger (#6568). There a long press reveals the actions
+  // instead, and the click that iOS sends after it must not navigate.
+  const revealOnHover = !appService?.isIOSApp;
+  const itemRef = useRef<HTMLLIElement>(null);
+  const longPressedRef = useRef(false);
+  const { handlers: longPressHandlers } = useLongPress(
+    {
+      onLongPress: () => {
+        longPressedRef.current = true;
+        itemRef.current?.focus({ preventScroll: true });
+      },
+      threshold: 300,
+    },
+    [],
+  );
+
   const handleClickItem = (event: React.MouseEvent | React.KeyboardEvent) => {
     event.preventDefault();
+    if (event.type === 'click' && longPressedRef.current) {
+      longPressedRef.current = false;
+      return;
+    }
     eventDispatcher.dispatch('navigate', { bookKey, cfi });
 
     onClick?.();
@@ -113,7 +136,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     const { booknotes = [] } = config;
     booknotes.forEach((item) => {
       if (item.id === note.id) {
-        item.deletedAt = Date.now();
+        item.deletedAt = nextBooknoteStamp(item);
         const views = getViewsById(bookKey.split('-')[0]!);
         views.forEach((view) => removeBookNoteOverlays(view, item));
       }
@@ -191,6 +214,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   const isEditable =
     !isOtherUserAnnotation &&
     (!!item.note || isBookmark || (!!inlineNoteEditing && item.type === 'annotation'));
+  const actionButtonReveal = clsx(
+    'group-focus-within:opacity-100',
+    revealOnHover && 'group-hover:opacity-100',
+  );
 
   return (
     <li
@@ -204,8 +231,19 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
           : 'hover:bg-base-300/55 focus:bg-base-300/55 bg-base-100',
         'transition-all duration-300 ease-in-out',
       )}
+      ref={itemRef}
       tabIndex={0}
       onClick={handleClickItem}
+      {...(!revealOnHover && {
+        onPointerDown: (e: React.PointerEvent) => {
+          longPressedRef.current = false;
+          longPressHandlers.onPointerDown(e);
+        },
+        onPointerMove: longPressHandlers.onPointerMove,
+        onPointerUp: longPressHandlers.onPointerUp,
+        onPointerCancel: longPressHandlers.onPointerCancel,
+        onPointerLeave: longPressHandlers.onPointerLeave,
+      })}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           handleClickItem(e);
@@ -298,10 +336,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
         className={clsx(
           'max-h-0 overflow-hidden p-0',
           'transition-[max-height] duration-300 ease-in-out',
-          'group-focus-within:overflow-visible group-hover:overflow-visible',
-          isEditable
-            ? 'group-focus-within:max-h-12 group-hover:max-h-12'
-            : 'group-focus-within:max-h-8 group-hover:max-h-8',
+          'group-focus-within:overflow-visible',
+          isEditable ? 'group-focus-within:max-h-12' : 'group-focus-within:max-h-8',
+          revealOnHover && 'group-hover:overflow-visible',
+          revealOnHover && (isEditable ? 'group-hover:max-h-12' : 'group-hover:max-h-8'),
         )}
         style={
           {
@@ -329,7 +367,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
           >
             <button
               onClick={handleCopyLink}
-              className='btn btn-ghost btn-xs text-base-content p-0 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+              className={clsx(
+                'btn btn-ghost btn-xs text-base-content p-0 opacity-0 transition duration-300 ease-in-out hover:border-transparent hover:bg-transparent',
+                actionButtonReveal,
+              )}
               aria-label={_('Copy')}
             >
               <MdContentCopy size={size18} />
@@ -338,7 +379,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
             {!isOtherUserAnnotation && (
               <button
                 onClick={deleteNote.bind(null, item)}
-                className='btn btn-ghost btn-xs p-0 text-red-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+                className={clsx(
+                  'btn btn-ghost btn-xs p-0 text-red-500 opacity-0 transition duration-300 ease-in-out hover:border-transparent hover:bg-transparent',
+                  actionButtonReveal,
+                )}
                 aria-label={_('Delete')}
               >
                 <MdDelete size={size18} />
@@ -354,7 +398,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
                       ? editNoteInline
                       : editNote.bind(null, item)
                 }
-                className='btn btn-ghost btn-xs p-0 text-blue-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+                className={clsx(
+                  'btn btn-ghost btn-xs p-0 text-blue-500 opacity-0 transition duration-300 ease-in-out hover:border-transparent hover:bg-transparent',
+                  actionButtonReveal,
+                )}
                 aria-label={item.note || item.type === 'bookmark' ? _('Edit') : _('Add Note')}
               >
                 <MdEdit size={size18} />

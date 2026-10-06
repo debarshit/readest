@@ -33,6 +33,7 @@ interface HighlightOptionsProps {
   onHandleHighlight: (update: boolean) => void;
   reaction?: string;
   onSelectReaction?: (emoji: string | null) => void;
+  onDismiss?: () => void;
 }
 
 const OPTIONS_HEIGHT_PIX = 28;
@@ -53,6 +54,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   onHandleHighlight,
   reaction,
   onSelectReaction,
+  onDismiss,
 }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
@@ -78,15 +80,9 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const suppressTapRef = useRef(false);
   const colorStripRef = useRef<HTMLDivElement | null>(null);
   const optionsGap = useResponsiveSize(compact ? 4 : 8);
-  const size6 = useResponsiveSize(6);
-  const size8 = useResponsiveSize(8);
-  const size10 = useResponsiveSize(10);
   const size16 = useResponsiveSize(16);
   const size24 = useResponsiveSize(24);
   const size30 = useResponsiveSize(30);
-  // Keep four colors visible for compact toolbars and five for larger toolbars.
-  const minColors = compact ? 4 : 5;
-  const colorStripMinLength = minColors * size16 + (minColors - 1) * size6 + 2 * size8 + 2;
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
   const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
   const emojis = ['👍', '❤️', '😮', '😂', '😢'];
@@ -222,6 +218,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
     setSelectedColor(color);
     onHandleHighlight(true);
+    onDismiss?.();
   };
 
   return (

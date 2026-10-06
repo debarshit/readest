@@ -99,7 +99,7 @@ export const ensureSharedBookLocal = async ({
       if (userId) {
         const syncClient = new SyncClient();
         const dbBook = transformBookToDB(existing, userId);
-        await syncClient.pushChanges({ books: [dbBook] });
+        await syncClient.pushChanges({ books: [dbBook as any] });
       }
     } catch (syncErr) {
       console.error('Failed to push existing book to sync:', syncErr);
@@ -153,7 +153,7 @@ export const ensureSharedBookLocal = async ({
     if (userId) {
       const syncClient = new SyncClient();
       const dbBook = transformBookToDB(imported, userId);
-      await syncClient.pushChanges({ books: [dbBook] });
+      await syncClient.pushChanges({ books: [dbBook as any] });
     }
   } catch (syncErr) {
     console.error('Failed to push imported book to sync:', syncErr);

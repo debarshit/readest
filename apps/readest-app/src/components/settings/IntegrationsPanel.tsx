@@ -1,7 +1,6 @@
 import clsx from 'clsx';
 import { BRAND_NAME } from '@/services/branding';
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { MdChevronRight } from 'react-icons/md';
 import {
   RiBookOpenLine,
@@ -9,14 +8,19 @@ import {
   RiRssLine,
   RiBookReadLine,
   RiBook3Line,
+  RiBookmark3Line,
+  RiFileList3Line,
   RiDiscordLine,
   RiSendPlaneLine,
+  RiWifiLine,
   RiCloudLine,
   RiCloudFill,
   RiDatabase2Line,
   RiGoogleLine,
   RiMicrosoftLine,
+  RiHeadphoneLine,
 } from 'react-icons/ri';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -24,19 +28,31 @@ import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
+import { useABSServerStore } from '@/store/absServerStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
+import { useLocalSendStore } from '@/store/localsendStore';
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
 import { isCloudSyncAllowed } from '@/utils/access';
-import { isWebAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
+import {
+  getLocalSendAlias,
+  isLocalSendEnabled,
+  setLocalSendEnabled,
+} from '@/services/localsend/devicePrefs';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
+import { eventDispatcher } from '@/utils/event';
+import ABSForm from './integrations/ABSForm';
 import BookOrbitForm from './integrations/BookOrbitForm';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
+import PageboundForm from './integrations/PageboundForm';
+import NotionForm from './integrations/NotionForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
+import LocalSendForm from './integrations/LocalSendForm';
 import WebDAVForm from './integrations/WebDAVForm';
 import GoogleDriveForm from './integrations/GoogleDriveForm';
 import OneDriveForm from './integrations/OneDriveForm';
@@ -69,8 +85,12 @@ type SubPage =
   | 'readest-cloud'
   | 'readwise'
   | 'hardcover'
+  | 'pagebound'
+  | 'notion'
   | 'opds'
+  | 'audiobookshelf'
   | 'send'
+  | 'localsend'
   | null;
 
 /**
@@ -87,12 +107,25 @@ type SubPage =
  */
 const IntegrationsPanel: React.FC = () => {
   const _ = useTranslation();
-  const router = useRouter();
+  const router = useAppRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { settings, requestedSubPage, setRequestedSubPage } = useSettingsStore();
   const opdsCatalogs = useCustomOPDSStore((s) => s.catalogs);
   const opdsCount = opdsCatalogs.filter((c) => !c.deletedAt).length;
+  const absServers = useABSServerStore((s) => s.servers);
+  const absCount = absServers.filter((s) => !s.deletedAt).length;
+  // The device name Nearby BookDrop announces once its service is running,
+  // so the integrations row can show it in place of a bare "On".
+  const localSendAlias = useLocalSendStore((s) => s.status?.alias);
+  // Toggled inline here or on the BookDrop sub-page; both announce the change
+  // with `localsend-prefs-changed`, which also starts/stops the service.
+  const [localSendEnabled, setLocalSendEnabledState] = useState(isLocalSendEnabled);
+  useEffect(() => {
+    const onPrefsChanged = () => setLocalSendEnabledState(isLocalSendEnabled());
+    eventDispatcher.on('localsend-prefs-changed', onPrefsChanged);
+    return () => eventDispatcher.off('localsend-prefs-changed', onPrefsChanged);
+  }, []);
   // Surface a library-wide WebDAV sync that's mid-flight in the row's
   // status line. Keeps the user from feeling like the run was lost
   // when they back out of the WebDAV sub-page or close the dialog.
@@ -179,8 +212,12 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'onedrive' ||
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
+      requestedSubPage === 'pagebound' ||
+      requestedSubPage === 'notion' ||
       requestedSubPage === 'opds' ||
-      requestedSubPage === 'send'
+      requestedSubPage === 'audiobookshelf' ||
+      requestedSubPage === 'send' ||
+      requestedSubPage === 'localsend'
     ) {
       setSubPage(requestedSubPage);
     } else if (requestedSubPage === 'cloudsync') {
@@ -377,6 +414,24 @@ const IntegrationsPanel: React.FC = () => {
         <HardcoverForm onBack={() => setSubPage(null)} />
       </div>
     );
+  if (subPage === 'pagebound')
+    return (
+      <div className='my-4 w-full'>
+        <PageboundForm onBack={() => setSubPage(null)} />
+      </div>
+    );
+  if (subPage === 'notion')
+    return (
+      <div className='my-4 w-full'>
+        <NotionForm onBack={() => setSubPage(null)} />
+      </div>
+    );
+  if (subPage === 'audiobookshelf')
+    return (
+      <div className='my-4 w-full'>
+        <ABSForm onBack={() => setSubPage(null)} />
+      </div>
+    );
   if (subPage === 'opds')
     return (
       <div className='my-4 w-full'>
@@ -395,6 +450,12 @@ const IntegrationsPanel: React.FC = () => {
         <SendToReadestForm onBack={() => setSubPage(null)} />
       </div>
     );
+  if (subPage === 'localsend')
+    return (
+      <div className='my-4 w-full'>
+        <LocalSendForm onBack={() => setSubPage(null)} />
+      </div>
+    );
 
   const koSyncStatus = settings.kosync?.enabled
     ? settings.kosync.username
@@ -410,6 +471,14 @@ const IntegrationsPanel: React.FC = () => {
 
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
+  const pageboundStatus =
+    settings.pagebound?.enabled && settings.pagebound.refreshToken
+      ? _('Connected')
+      : _('Not connected');
+  const notionStatus =
+    settings.notion?.enabled && settings.notion.accessToken && settings.notion.databaseId
+      ? _('Connected')
+      : _('Not connected');
 
   // Cloud sync providers are independently selectable (#5062): any subset of
   // {Readest Cloud, WebDAV, Google Drive, S3, OneDrive} can sync the library
@@ -487,6 +556,20 @@ const IntegrationsPanel: React.FC = () => {
 
   const opdsStatus =
     opdsCount > 0 ? _('{{count}} catalog', { count: opdsCount }) : _('No catalogs');
+  const absStatus = absCount > 0 ? _('{{count}} server', { count: absCount }) : _('No servers');
+  // Enabled rows show the announced device name (falling back to the stored
+  // custom alias, then a bare "On" until the service reports its alias).
+  const localSendName = localSendAlias || getLocalSendAlias();
+  const localSendStatus = !localSendEnabled
+    ? _('Off')
+    : localSendName
+      ? _('Visible as {{name}}', { name: localSendName })
+      : _('On');
+
+  const toggleLocalSend = (next: boolean) => {
+    setLocalSendEnabled(next);
+    eventDispatcher.dispatch('localsend-prefs-changed', {});
+  };
 
   return (
     <div className='my-4 w-full space-y-6'>
@@ -498,6 +581,26 @@ const IntegrationsPanel: React.FC = () => {
           })}
         </p>
       </div>
+
+      {/* Nearby BookDrop is the one integration that is on by default, and it
+          listens on the local network, so it leads the panel (#6360). */}
+      {isTauriAppPlatform() && (
+        <div className='w-full' data-setting-id='settings.integrations.localsend'>
+          <SectionTitle className='mb-2'>{_('Local Network')}</SectionTitle>
+          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
+            <CloudProviderRow
+              icon={RiWifiLine}
+              title={_('Nearby BookDrop')}
+              status={localSendStatus}
+              checked={localSendEnabled}
+              canToggle
+              onToggle={toggleLocalSend}
+              onOpen={() => setSubPage('localsend')}
+              toggleLabel={_('Enable Nearby BookDrop')}
+            />
+          </div>
+        </div>
+      )}
 
       <div className='w-full' data-setting-id='settings.integrations.sync'>
         <SectionTitle className='mb-2'>{_('Reading Sync')}</SectionTitle>
@@ -526,6 +629,21 @@ const IntegrationsPanel: React.FC = () => {
               title={_('Hardcover')}
               status={hardcoverStatus}
               onClick={() => setSubPage('hardcover')}
+            />
+            {/* Pagebound's API sends no CORS headers, so only native HTTP reaches it. */}
+            {isTauriAppPlatform() && (
+              <IntegrationRow
+                icon={RiBookmark3Line}
+                title={_('Pagebound')}
+                status={pageboundStatus}
+                onClick={() => setSubPage('pagebound')}
+              />
+            )}
+            <IntegrationRow
+              icon={RiFileList3Line}
+              title={_('Notion')}
+              status={notionStatus}
+              onClick={() => setSubPage('notion')}
             />
           </div>
         </div>
@@ -660,6 +778,12 @@ const IntegrationsPanel: React.FC = () => {
               onClick={() => setSubPage('opds')}
             />
             <IntegrationRow
+              icon={RiHeadphoneLine}
+              title={_('Audiobookshelf')}
+              status={absStatus}
+              onClick={() => setSubPage('audiobookshelf')}
+            />
+            <IntegrationRow
               icon={RiSendPlaneLine}
               title={_('Send to {{brand}}', { brand: BRAND_NAME })}
               status={_('Email books to your library')}
@@ -743,10 +867,11 @@ interface CloudProviderRowProps {
 }
 
 /**
- * A cloud-sync provider row. Two controls: a trailing checkbox that turns
- * this provider's library sync on or off (several may be on at once) —
- * enabled only when it's already configured — and the row body / chevron
- * that opens its config sub-page (connect, sync options, disconnect).
+ * A cloud-sync provider row (also used for Nearby BookDrop). Two controls: a
+ * trailing checkbox that turns this provider's library sync on or off
+ * (several may be on at once) — enabled only when it's already configured —
+ * and the row body / chevron that opens its config sub-page (connect, sync
+ * options, disconnect).
  */
 const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
   icon: Icon,

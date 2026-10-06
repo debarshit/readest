@@ -15,6 +15,7 @@ import { ArcService, type AppliedArc } from '@/services/arcService';
 import {
   buildBookLookupIndex,
   collectKnownSourcePaths,
+  isInHiddenDir,
   normalizeFilePathForIndex,
   selectNewImportableFiles,
   toWatchedFolderImports,
@@ -26,17 +27,21 @@ import { DEFAULT_NEARBY_WORDS } from '@/utils/searchConfig';
 import { clearLibrarySearchHistory, loadLibrarySearchHistory } from './utils/searchHistory';
 import type { LibrarySearchTarget } from '@/types/book';
 import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
-import { getBookWithUpdatedMetadata, listFormater } from '@/utils/book';
+import { listFormater } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
 import { ingestFile } from '@/services/ingestService';
+import { saveBookMetadataEdit } from '@/services/bookMetadataEdit';
 import { eventDispatcher } from '@/utils/event';
-import { ProgressPayload } from '@/utils/transfer';
-import { throttle } from '@/utils/throttle';
+import { purgeCloudBookData } from '@/services/purgeCloudBookData';
 import { transferManager } from '@/services/transferManager';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { getFilename, getFolderImportGroupName, joinScannedPath } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
-import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
+import {
+  getInitializedAppService,
+  isTauriAppPlatform,
+  isWebAppPlatform,
+} from '@/services/environment';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -65,11 +70,11 @@ import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { getLibraryViewSettings } from '@/helpers/settings';
 import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
-import { useOpenAnnotationLink } from '@/hooks/useOpenAnnotationLink';
-import { useOpenBookLink } from '@/hooks/useOpenBookLink';
-import { useReadingWidget } from '@/hooks/useReadingWidget';
+import { useOpenLaunchLinks } from '@/hooks/useOpenLaunchLinks';
+import { useHomeScreenWidgets } from '@/hooks/useHomeScreenWidgets';
 import { useOpenShareLink } from '@/hooks/useOpenShareLink';
 import { useOpenBuddyReadLink } from '@/hooks/useOpenBuddyReadLink';
+import { useOpenDeviceLink } from '@/hooks/useOpenDeviceLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
@@ -220,6 +225,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     getGroupName,
     checkOpenWithBooks,
     checkLastOpenBooks,
+    checkPendingLaunchLink,
     setCheckOpenWithBooks,
     setCheckLastOpenBooks,
   } = useLibraryStore();
@@ -236,11 +242,21 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const isTransferQueueOpen = useTransferStore((state) => state.isTransferQueueOpen);
 
   // Library page pulls user replicas (dictionaries, custom fonts,
-  // background textures, OPDS catalogs, bundled settings). Deferred
-  // 10s; module-scoped dedup means a later navigation to the reader
-  // won't re-pull the same kind.
+  // background textures, OPDS catalogs, Audiobookshelf servers, custom
+  // translators + prompts, bundled settings). Deferred 10s; module-scoped
+  // dedup means a later navigation to the reader won't re-pull the same kind.
   useReplicaPull({
-    kinds: ['dictionary', 'font', 'texture', 'opds_catalog', 'abs_server', 'settings', 'bookshelf'],
+    kinds: [
+      'dictionary',
+      'font',
+      'texture',
+      'opds_catalog',
+      'abs_server',
+      'custom_translator',
+      'translation_prompt',
+      'settings',
+      'bookshelf',
+    ],
   });
   // Hydrate the custom-font store from persisted settings so the Font
   // panel sees imported fonts even when opened straight from the
@@ -371,7 +387,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     groupName: string;
   } | null>(null);
   const [booksTransferProgress, setBooksTransferProgress] = useState<{
-    [key: string]: number | null;
+    [key: string]: number;
   }>({});
   const [pendingNavigationBookIds, setPendingNavigationBookIds] = useState<string[] | null>(null);
   const isInitiating = useRef(false);
@@ -433,11 +449,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   useAppUrlIngress();
   useOpenWithBooks();
-  useOpenAnnotationLink();
-  useOpenBookLink();
-  useReadingWidget();
+  useOpenLaunchLinks();
+  useHomeScreenWidgets();
   useOpenShareLink();
   useOpenBuddyReadLink();
+  useOpenDeviceLink();
   useClipUrlIngress();
   useTransferQueue(libraryLoaded);
 
@@ -840,8 +856,37 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       return false;
     };
 
-    initLogin();
-    initLibrary();
+    // Both inits are fire-and-forget, and `checkOpenWithBooks` /
+    // `checkLastOpenBooks` are cleared only on `initLibrary`'s success path.
+    // An escaping throw therefore left this page's early return rendering a
+    // bare `full-height` div for the rest of the session — the blank App Store
+    // window, where the sandbox denied a stale `customRootDir` and the mkdir
+    // inside `loadLibraryBooks` rejected with nothing to catch it. Always
+    // release the render gates, then say what actually broke.
+    const recoverFromInitFailure = (error: unknown) => {
+      console.error('Failed to initialize library:', error);
+      setCheckOpenWithBooks(false);
+      setCheckLastOpenBooks(false);
+      // A launch link waiting on the library would otherwise hold the page blank for good.
+      useLibraryStore.getState().setCheckPendingLaunchLink(false);
+      setLibraryLoaded(true);
+      if (loadingTimeout) clearTimeout(loadingTimeout);
+      setLoading(false);
+      const unavailableRootDir = getInitializedAppService()?.unavailableRootDir;
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: unavailableRootDir
+          ? _(
+              'Cannot open the library folder "{{path}}". Reconnect it, or choose another folder in Settings.',
+              { path: unavailableRootDir },
+            )
+          : _('Failed to load your library.'),
+        timeout: 10000,
+      });
+    };
+
+    initLogin().catch((error) => console.error('Failed to initialize login:', error));
+    initLibrary().catch(recoverFromInitFailure);
     return () => {
       setCheckOpenWithBooks(false);
       setCheckLastOpenBooks(false);
@@ -1113,10 +1158,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           autoImportGrantedFoldersRef.current.add(folder);
         }
         const items = await appService.readDirectory(folder, 'None', SUPPORTED_BOOK_EXTS);
-        const entries = items.map((item) => ({
-          fullPath: joinScannedPath(folder, item.path),
-          size: item.size,
-        }));
+        const entries = items
+          .filter((item) => !isInHiddenDir(item.path))
+          .map((item) => ({
+            fullPath: joinScannedPath(folder, item.path),
+            size: item.size,
+          }));
         const fresh = selectNewImportableFiles(entries, {
           extensions: SUPPORTED_BOOK_EXTS,
           minSizeBytes: AUTO_IMPORT_MIN_SIZE_BYTES,
@@ -1165,20 +1212,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     scanAndImport: autoImportFromWatchedFolders,
   });
 
-  const updateBookTransferProgress = throttle((bookHash: string, progress: ProgressPayload) => {
-    if (progress.total === 0) return;
-    const progressPct = (progress.progress / progress.total) * 100;
-    setBooksTransferProgress((prev) => ({
-      ...prev,
-      [bookHash]: progressPct,
-    }));
-  }, 500);
-
   const { handleBookUpload, handleBookDownload } = useBookTransferActions(
     envConfig,
     appService,
     updateBook,
-    updateBookTransferProgress,
+    setBooksTransferProgress,
   );
 
   const handleBookDelete = (deleteAction: DeleteAction) => {
@@ -1197,15 +1235,32 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       };
 
       try {
+        // Purge also erases the book's synced progress and notes, or the next
+        // open pulls them straight back (#6532). It runs first: if the network
+        // step fails, nothing irreversible has happened locally yet.
+        if (deleteAction === 'purge' && user) {
+          await purgeCloudBookData(book.hash);
+        }
+
         // Handle local deletion immediately. Purge mirrors 'both' (tombstone +
         // queued cloud delete) but hands 'purge' to deleteBook, which also wipes
         // the entire Books/<hash>/ folder (config/nav/cover) — issue #4615.
         if (deleteAction === 'local' || deleteAction === 'both' || deleteAction === 'purge') {
           await appService?.deleteBook(book, deleteAction === 'purge' ? 'purge' : 'local');
           if (deleteAction === 'both' || deleteAction === 'purge') {
-            book.deletedAt = Date.now();
+            const deletedAt = Date.now();
+            book.deletedAt = deletedAt;
             book.downloadedAt = null;
             book.coverDownloadedAt = null;
+            book.fileSyncDeletionRequestedAt = deletedAt;
+            // The row's progress survives the tombstone and comes back on a
+            // re-import; null (not undefined, which JSON drops) clears it in
+            // the cloud too (#6532).
+            if (deleteAction === 'purge') book.progress = null;
+          } else {
+            // "Remove from Device Only" must never leave stale authorization
+            // from an older delete/re-import cycle on the live row.
+            book.fileSyncDeletionRequestedAt = null;
           }
           await updateBook(envConfig, book);
           if (ttsSessionManager.getSessionByHash(book.hash)) {
@@ -1253,18 +1308,20 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // Audiobookshelf offline downloads (#6256): the shelf's context menu asks
   // through events so the handlers need not be threaded through every shelf.
   // Removing the copy is "Remove from Device Only".
-  const { handleBookOfflineDownload, offlinePremiumLabel } = useAbsOfflineDownload();
+  const { handleBookOfflineDownload, handleBooksOfflineDownload, offlinePremiumLabel } =
+    useAbsOfflineDownload();
   const offlineHandlersRef = useRef({
-    download: handleBookOfflineDownload,
+    download: handleBooksOfflineDownload,
     remove: handleBookDelete('local'),
   });
   offlineHandlersRef.current = {
-    download: handleBookOfflineDownload,
+    download: handleBooksOfflineDownload,
     remove: handleBookDelete('local'),
   };
   useEffect(() => {
+    // `books` from a select-mode bulk Download, `book` from a context menu.
     const onDownload = (event: CustomEvent) => {
-      offlineHandlersRef.current.download(event.detail.book);
+      offlineHandlersRef.current.download(event.detail.books ?? [event.detail.book]);
     };
     const onRemove = async (event: CustomEvent) => {
       await offlineHandlersRef.current.remove(event.detail.book);
@@ -1277,61 +1334,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     };
   }, []);
 
-  const handleUpdateMetadata = async (book: Book, metadata: BookMetadata, tags: string[]) => {
-    // Build a NEW book object instead of mutating `book` in place. <BookCover>
-    // is memoized and compares fields off the book, so mutating the existing
-    // object (which React holds as the previous snapshot) makes the comparator
-    // see no change and the library cover only refreshes after a full reload.
-    const updatedBook = getBookWithUpdatedMetadata(book, metadata, tags);
-    if (metadata.coverImageBlobUrl || metadata.coverImageUrl || metadata.coverImageFile) {
-      try {
-        await appService?.updateCoverImage(
-          updatedBook,
-          metadata.coverImageBlobUrl || metadata.coverImageUrl,
-          metadata.coverImageFile,
-        );
-        // Cover-change sync (issue #4544): recompute the cover's content hash.
-        // If it actually changed, bump coverHash + coverUpdatedAt so peers
-        // re-download it (the book row already syncs via updatedAt).
-        // computeCoverHash returns null for a '_blank' deletion — we skip the
-        // bump there (cover deletion is intentionally not synced; peers keep
-        // their cover until a new one is set).
-        const newCoverHash = (await appService?.computeCoverHash(updatedBook)) ?? null;
-        if (newCoverHash && newCoverHash !== book.coverHash) {
-          // For a book already in the cloud, re-upload the cover FIRST and only
-          // advertise the new version if it succeeded — otherwise peers would
-          // try to fetch a cover that isn't there. A not-yet-uploaded book
-          // carries the new cover on its first full upload, so the bump is safe.
-          let coverUploaded = true;
-          if (user && updatedBook.uploadedAt) {
-            try {
-              await appService?.uploadBookCover(updatedBook);
-            } catch (uploadError) {
-              console.warn('Failed to upload updated cover:', uploadError);
-              coverUploaded = false;
-            }
-          }
-          if (coverUploaded) {
-            updatedBook.coverHash = newCoverHash;
-            updatedBook.coverUpdatedAt = Date.now();
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to update cover image:', error);
-      }
-    }
-    if (isWebAppPlatform()) {
-      // Clear HTTP cover image URL if cover is updated with a local file
-      if (metadata.coverImageBlobUrl) {
-        metadata.coverImageUrl = undefined;
-      }
-    } else {
-      metadata.coverImageUrl = undefined;
-    }
-    metadata.coverImageBlobUrl = undefined;
-    metadata.coverImageFile = undefined;
-    await updateBook(envConfig, updatedBook);
-  };
+  const handleUpdateMetadata = (book: Book, metadata: BookMetadata, tags: string[]) =>
+    saveBookMetadataEdit(envConfig, book, metadata, tags, !!user);
 
   const handleMetadataValueClick = (type: 'tag' | 'subject', value: string) => {
     const groupBy = type === 'tag' ? LibraryGroupByType.Tag : LibraryGroupByType.Subject;
@@ -1796,6 +1800,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // Re-filter by extension because the JS fallback of readDirectory ignores
     // the extensions argument (only the native Rust walk filters in-scan).
     const filtered = files.filter((file) => {
+      if (isInHiddenDir(file.path)) return false;
       const ext = file.path.split('.').pop()?.toLowerCase() || '';
       if (!exts.includes(ext)) return false;
       if (minSizeBytes > 0 && file.size < minSizeBytes) return false;
@@ -1926,7 +1931,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     handleLibraryNavigation(group);
   };
 
-  if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
+  if (
+    !appService ||
+    !insets ||
+    checkOpenWithBooks ||
+    checkLastOpenBooks ||
+    checkPendingLaunchLink
+  ) {
     return <div className='full-height bg-base-200' />;
   }
 

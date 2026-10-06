@@ -198,6 +198,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
                 onHandleHighlight={onHighlight}
                 reaction={reaction}
                 onSelectReaction={onSelectReaction}
+                onDismiss={onDismiss}
               />
             )
           )}

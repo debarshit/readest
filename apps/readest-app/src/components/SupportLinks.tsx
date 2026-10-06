@@ -1,4 +1,4 @@
-import { FaDiscord, FaReddit, FaInstagram } from 'react-icons/fa';
+import { FaDiscord, FaInstagram } from 'react-icons/fa';
 import { BRAND_NAME } from '@/services/branding';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
