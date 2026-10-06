@@ -35,6 +35,7 @@ import Dropdown from '@/components/Dropdown';
 import Menu from '@/components/Menu';
 import MenuItem from '@/components/MenuItem';
 import { useRouter } from 'next/navigation';
+import { BRAND_NAME } from '@/services/branding';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { isWebAppPlatform } from '@/services/environment';
@@ -472,7 +473,8 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
     if (isWebCatalogProxyWarningRequired && !newCatalog.proxyConsent) {
       setProxyConsentError(
         _(
-          'Please confirm that this OPDS connection will be proxied through Readest servers on the web app before continuing.',
+          'Please confirm that this OPDS connection will be proxied through {{brand}} servers on the web app before continuing.',
+          { brand: BRAND_NAME },
         ),
       );
       return;
@@ -931,7 +933,8 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                       />
                       <span className='text-sm text-sm leading-6'>
                         {_(
-                          'I understand this OPDS connection will be proxied through Readest servers on the web app. If I do not trust Readest with these credentials or headers, I should use the native app instead.',
+                          'I understand this OPDS connection will be proxied through {{brand}} servers on the web app. If I do not trust {{brand}} with these credentials or headers, I should use the native app instead.',
+                          { brand: BRAND_NAME },
                         )}
                       </span>
                     </label>

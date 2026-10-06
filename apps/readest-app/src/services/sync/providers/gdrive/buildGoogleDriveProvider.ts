@@ -28,22 +28,17 @@ import { createDriveTokenPersistence } from './driveTokenStore';
  * inside the app binary.
  */
 const OFFICIAL_GOOGLE_CLIENT_ID =
-  '209390247301-ctpmep68ppfa56r1b8tr35e4qi4p60kq.apps.googleusercontent.com';
+  '778512376374-c77e1h67f9olh2umkkoa4su85r0ajkms.apps.googleusercontent.com';
 
 export const getGoogleClientId = (): string | undefined =>
   process.env['NEXT_PUBLIC_GOOGLE_CLIENT_ID'] || OFFICIAL_GOOGLE_CLIENT_ID;
 
 /**
- * The official Readest **Web-type** Google OAuth client id used by the browser
- * GIS flow (its authorized JavaScript origins are `web.readest.com` + the
- * localhost dev origin). Separate from the iOS-type
- * {@link OFFICIAL_GOOGLE_CLIENT_ID}, which can't drive a browser token client.
- * Not a secret — it ships in the web bundle. A forker overrides it via
- * `NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID` and must register their own deploy origin
- * on that client.
+ * The official Yomi **Web-type** Google OAuth client id used by the browser
+ * GIS flow.
  */
 const OFFICIAL_GOOGLE_WEB_CLIENT_ID =
-  '209390247301-585tc3dohg4c02588uvah5d32hg6dneq.apps.googleusercontent.com';
+  '778512376374-jiccfkpunkmponmbgftd6sb76vf8r33b.apps.googleusercontent.com';
 
 export const getGoogleWebClientId = (): string | undefined =>
   process.env['NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID'] || OFFICIAL_GOOGLE_WEB_CLIENT_ID;

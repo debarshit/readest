@@ -6,6 +6,7 @@
  */
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { type as osType } from '@tauri-apps/plugin-os';
+import { BRAND_NAME } from '@/services/branding';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { getMicrosoftClientId } from './buildOneDriveProvider';
 import { createOneDriveTokenPersistence } from './onedriveTokenStore';
@@ -62,7 +63,8 @@ export const runOneDriveConnect = async (): Promise<ConnectOneDriveResult> => {
   const clientId = getMicrosoftClientId();
   if (!clientId) throw new Error('OneDrive is not configured in this build');
   const persistence = await createOneDriveTokenPersistence();
-  if (!persistence) throw new Error('OneDrive requires a Readest app build with secure storage');
+  if (!persistence)
+    throw new Error(`OneDrive requires a ${BRAND_NAME} app build with secure storage`);
   return connectOneDrive({
     config: buildMicrosoftOAuthConfig(clientId),
     fetchFn: resolveFetch(),

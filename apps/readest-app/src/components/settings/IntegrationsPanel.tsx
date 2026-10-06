@@ -638,7 +638,7 @@ const IntegrationsPanel: React.FC = () => {
           >
             <CloudProviderRow
               icon={RiCloudFill}
-              title={_('Biblophile Cloud')}
+              title={_('{{brand}} Cloud', { brand: BRAND_NAME })}
               status={readestStatus}
               checked={!!user && readestEnabled}
               canToggle={!!user}

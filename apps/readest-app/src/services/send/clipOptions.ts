@@ -11,9 +11,10 @@
  * clipper window.
  */
 
+import { BRAND_NAME } from '@/services/branding';
 import { getThemeCode } from '@/utils/style';
 
-type Translate = (key: string) => string;
+type Translate = (key: string, options?: Record<string, string | number>) => string;
 
 export interface ClipOptions {
   windowTitle: string;
@@ -35,11 +36,11 @@ export interface ClipOptions {
 export function getClipOptions(_: Translate): ClipOptions {
   const { bg, fg } = getThemeCode();
   return {
-    windowTitle: _('Saving to your Readest library…'),
-    overlayTitle: _('Saving to Readest'),
+    windowTitle: _('Saving to your {{brand}} library…', { brand: BRAND_NAME }),
+    overlayTitle: _('Saving to {{brand}}', { brand: BRAND_NAME }),
     loadingStatus: _('Loading article…'),
     capturingStatus: _('Capturing article…'),
-    savedTitle: _('Saved to Readest'),
+    savedTitle: _('Saved to {{brand}}', { brand: BRAND_NAME }),
     background: bg,
     foreground: fg,
     signInHint: _('Sign in if needed, then capture'),

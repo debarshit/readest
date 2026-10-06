@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@/services/branding';
 import type { Book } from '@/types/book';
 import type { BookshelfFieldKind, BookshelfOperator } from '@/types/bookshelf';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -158,7 +159,7 @@ export const BOOKSHELF_FIELDS: BookshelfField[] = [
     kind: 'text',
     choices: [
       { value: 'local', label: _('On this device') },
-      { value: 'cloud', label: _('In Readest Cloud') },
+      { value: 'cloud', label: _(`In ${BRAND_NAME} Cloud`) },
       { value: 'streaming', label: _('Streaming') },
       { value: 'unavailable', label: _('Unavailable') },
     ],
@@ -181,7 +182,12 @@ export const BOOKSHELF_FIELDS: BookshelfField[] = [
     kind: 'boolean',
     read: (b) => !!(b.downloadedAt || b.absDownloadedAt),
   },
-  { id: 'uploaded', label: _('In Readest Cloud'), kind: 'boolean', read: (b) => !!b.uploadedAt },
+  {
+    id: 'uploaded',
+    label: _(`In ${BRAND_NAME} Cloud`),
+    kind: 'boolean',
+    read: (b) => !!b.uploadedAt,
+  },
   {
     id: 'downloadStatus',
     label: _('Download status'),

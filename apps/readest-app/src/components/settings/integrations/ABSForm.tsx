@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { MdCloudSync } from 'react-icons/md';
+import { BRAND_NAME } from '@/services/branding';
 import { useEnv } from '@/context/EnvContext';
 import { isWebAppPlatform, type EnvConfigType } from '@/services/environment';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -228,8 +229,8 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
               <Tips>
                 <li>
                   {_(
-                    'Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.',
-                    { origin: webOrigin },
+                    'Using {{brand}} on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.',
+                    { brand: BRAND_NAME, origin: webOrigin },
                   )}{' '}
                   <a
                     href='https://audiobookshelf.org/docs/documentation/server-management/cors/'

@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { BRAND_NAME } from '@/services/branding';
 import type { SystemSettings } from '@/types/settings';
 
 vi.mock('@/utils/access', async (importOriginal) => {
@@ -160,7 +161,7 @@ describe('cloudProviderDisplayName', () => {
     expect(cloudProviderDisplayName('gdrive')).toBe('Google Drive');
     expect(cloudProviderDisplayName('s3')).toBe('S3');
     expect(cloudProviderDisplayName('onedrive')).toBe('OneDrive');
-    expect(cloudProviderDisplayName('readest')).toBe('Readest Cloud');
+    expect(cloudProviderDisplayName('readest')).toBe(`${BRAND_NAME} Cloud`);
   });
 });
 
@@ -269,7 +270,9 @@ describe('isReadestCloudStorageActive (follows the flag, not exclusivity)', () =
 
 describe('cloudProvidersDisplayName', () => {
   test('joins provider names for the "synced via" copy', () => {
-    expect(cloudProvidersDisplayName(['readest', 'gdrive'])).toBe('Readest Cloud, Google Drive');
+    expect(cloudProvidersDisplayName(['readest', 'gdrive'])).toBe(
+      `${BRAND_NAME} Cloud, Google Drive`,
+    );
   });
 });
 

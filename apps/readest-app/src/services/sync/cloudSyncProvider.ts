@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@/services/branding';
 import type { SystemSettings } from '@/types/settings';
 import type { UserPlan } from '@/types/quota';
 import { isCloudSyncAllowed } from '@/utils/access';
@@ -35,7 +36,7 @@ export const cloudProviderDisplayName = (kind: CloudSyncProviderKind): string =>
           ? 'OneDrive'
           : kind === 'icloud'
             ? 'iCloud'
-            : 'Readest Cloud';
+            : `${BRAND_NAME} Cloud`;
 
 /**
  * The third-party backends the user has switched on, in a STABLE order that

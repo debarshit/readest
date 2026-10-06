@@ -6,6 +6,7 @@
  */
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { type as osType } from '@tauri-apps/plugin-os';
+import { BRAND_NAME } from '@/services/branding';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { getGoogleClientId, getGoogleWebClientId } from './buildGoogleDriveProvider';
 import { createDriveTokenPersistence } from './driveTokenStore';
@@ -76,7 +77,7 @@ export const runGoogleDriveConnect = async (): Promise<ConnectGoogleDriveResult>
   }
   const persistence = await createDriveTokenPersistence();
   if (!persistence) {
-    throw new Error('Google Drive requires a Readest app build with secure storage');
+    throw new Error(`Google Drive requires a ${BRAND_NAME} app build with secure storage`);
   }
   return connectGoogleDrive({
     clientId,
