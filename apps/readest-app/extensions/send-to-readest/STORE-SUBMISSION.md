@@ -8,10 +8,10 @@ added or removed, update the matching justification here.
 
 ## Single purpose
 
-> Send to Readest saves the web page you are currently viewing into your
-> personal Readest library as a self-contained EPUB. When you click the
+> Send to Yomi saves the web page you are currently viewing into your
+> personal Yomi library as a self-contained EPUB. When you click the
 > toolbar button, it extracts the readable article and its images and uploads
-> the result to your own Readest account.
+> the result to your own Yomi account.
 
 ## Permission justifications
 
@@ -29,7 +29,7 @@ Paste each into the **Privacy practices → Permission justification** field.
 > code — the script is bundled in the extension.
 
 **`storage`**
-> Caches the user's own Readest sign-in token (synced from the Readest website)
+> Caches the user's own Yomi sign-in token (synced from the Yomi / Biblophile website)
 > and an optional custom server URL in local extension storage, so the upload
 > can be authenticated without re-prompting for credentials. No browsing data
 > is stored.
@@ -45,12 +45,12 @@ Paste each into the **Privacy practices → Permission justification** field.
 > (1) injecting the capture script into the page being clipped, and
 > (2) downloading the images that page references — using the user's existing
 > session so images behind a login or paywall capture correctly. Content and
-> images are sent only to the user's Readest account; nothing is sent to any
+> images are sent only to the user's Yomi account; nothing is sent to any
 > third party.
 
-**Content scripts on `*.readest.com` / `localhost:3000`**
-> A content script runs only on Readest's own sites to copy the user's existing
-> Readest access token into the extension so uploads are authenticated to the
+**Content scripts on `*.biblophile.com` / `localhost:3000`**
+> A content script runs only on Yomi's own sites to copy the user's existing
+> Yomi access token into the extension so uploads are authenticated to the
 > user's account. It never reads a password or refresh token.
 
 ## Remote code
@@ -58,13 +58,13 @@ Paste each into the **Privacy practices → Permission justification** field.
 > **No.** All libraries (zip.js, Mozilla Readability, DOMPurify, language
 > detection) are bundled in the extension package and execute locally. The
 > extension downloads only the images of the page the user chose to clip and
-> uploads the resulting EPUB to the user's Readest account.
+> uploads the resulting EPUB to the user's Yomi account.
 
 ## Data use disclosures
 
 **Data types collected** (check in the dashboard):
 - ☑ **Website content** — the page text and images the user clips.
-- ☑ **Authentication information** — the user's Readest access token, used
+- ☑ **Authentication information** — the user's Yomi access token, used
   solely to authenticate the upload to the user's own account.
 - ☐ Everything else (personally identifiable info, location, financial,
   health, personal communications, web history, user activity) — **not**
@@ -78,19 +78,17 @@ Paste each into the **Privacy practices → Permission justification** field.
 - ☑ I do not use or transfer user data to determine creditworthiness or for
   lending purposes.
 
-**Privacy policy URL:** `https://www.readest.com/send-to-readest/privacy-policy`
-(canonical; maintained in the `readest-landing` repo at
-`src/app/[locale]/(legal)/send-to-readest/privacy-policy/page.mdx`)
+**Privacy policy URL:** `https://biblophile.com/yomi/privacy-policy`
 
 ## Store listing copy
 
-**Name:** Send to Readest
+**Name:** Send to Yomi
 
 **Short description (132 char max):**
-> Save web pages to your Readest library
+> Save web pages to your Yomi library
 
 **Detailed description (suggested):**
-> Send to Readest saves the page you're reading straight to your Readest
+> Send to Yomi saves the page you're reading straight to your Yomi
 > library with one click — as a clean, self-contained EPUB you can read on any
 > device.
 >
@@ -98,10 +96,10 @@ Paste each into the **Privacy practices → Permission justification** field.
 > • Images are bundled in, so the saved page opens fully offline.
 > • Works on pages behind a login or paywall — it captures what you can
 >   actually see, using your existing session.
-> • The clipped book syncs to Readest on all your devices.
+> • The clipped book syncs to Yomi on all your devices.
 >
 > You stay in control: nothing is captured until you click the button, and your
-> clips are sent only to your own Readest account. Sign in to Readest once and
+> clips are sent only to your own Yomi account. Sign in to Yomi once and
 > you're set.
 
 **Category:** Productivity

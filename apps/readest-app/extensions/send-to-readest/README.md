@@ -1,6 +1,6 @@
-# Send to Readest — browser extension
+# Send to Yomi — browser extension
 
-One-click capture of the current web page into your Readest library as a
+One-click capture of the current web page into your Yomi library as a
 **self-contained EPUB**. Built for Chromium-based browsers (Chrome, Edge,
 Arc, Brave). Manifest V3.
 
@@ -27,7 +27,7 @@ For every page the user clips, the extension produces a single `.epub`:
 
 The EPUB is POSTed to **`POST /api/send/inbox/file`** with `kind=file`. The
 server writes the bytes to R2 and inserts a `send_inbox` row; the next
-Readest client to open drains the inbox and imports the EPUB as-is — no
+Yomi client to open drains the inbox and imports the EPUB as-is — no
 further server-side conversion.
 
 ### Locally opened pages (`file://`)
@@ -70,15 +70,13 @@ tried to fetch and render it. That broke on:
   headers + JS challenges).
 - Lazy-loaded images that never materialize without a real scroll.
 
-Building the EPUB on the capturing client side-steps all three. See
-[D5 in the Send to Readest plan](../../docs/) and Part 4a / Part 8 of the
-plan for the original design.
+Building the EPUB on the capturing client side-steps all three.
 
 ## Architecture
 
 ```
 popup (popup.ts)
-   │  click "Send to Readest"
+   │  click "Send to Yomi"
    ▼
 service worker (background/service-worker.ts)
    │  chrome.scripting.executeScript({ files: ['content/capture.js'] })
@@ -100,11 +98,11 @@ server (src/pages/api/send/inbox/file.ts)
    ├─ putObject → R2 (inbox bucket, kind='file')
    └─ insert send_inbox row
    ▼
-next Readest open → drainer imports the EPUB → book in library on all devices
+next Yomi open → drainer imports the EPUB → book in library on all devices
 ```
 
-A second always-on content script (`content/auth-bridge.ts`) runs only on
-`web.readest.com` and copies the user's Supabase access token into the
+A second always-on content script (`content/auth-bridge.ts`) runs on
+`biblophile.com` and copies the user's Supabase access token into the
 extension's `chrome.storage.local` so the popup can authenticate to the
 inbox endpoint without prompting for credentials. The extension never
 stores a password or refresh token.
@@ -136,16 +134,16 @@ The build is webpack-based:
 2. Open `chrome://extensions`, enable **Developer mode**.
 3. **Load unpacked** → select this directory's `dist/` folder (not the
    project root).
-4. Visit <https://web.readest.com> once and sign in so the auth-bridge
+4. Visit <https://biblophile.com/yomi/auth> once and sign in so the auth-bridge
    content script captures the access token.
 5. Click the extension's toolbar icon on any article page. The popup
    reflects each phase: capturing → fetching images → building EPUB →
    sending.
 
-### Pointing the extension at a local Readest
+### Pointing the extension at a local Yomi
 
 The extension reads `chrome.storage.local.readestApiBase` if set, falling
-back to `https://web.readest.com`. From the DevTools console of the
+back to `https://biblophile.com/yomi`. From the DevTools console of the
 extension's background page:
 
 ```js
@@ -163,32 +161,20 @@ toolbar badge updates, the lazy-load scroll dance (incl.
 phase. From the `apps/readest-app` workspace root:
 
 ```bash
-pnpm test:extension      # 54 shell tests, ~1 s
-pnpm build-browser-ext   # production webpack build (catches alias / stub regressions)
-pnpm test                # full suite — also runs the extension tests via vitest's default glob
+pnpm test:extension      # shell tests
+pnpm build-browser-ext   # production webpack build
+pnpm test                # full suite
 ```
-
-The shared EPUB pipeline (`convertPageToEpub`) and the server's
-`/api/send/inbox/file` endpoint have their own tests under
-`apps/readest-app/src/__tests__/services/`. The unification regression
-specifically lives in `send-convert-page-unified.test.ts`.
-
-**CI coverage:** the GitHub Actions `test_web_app` job runs
-`pnpm test:pr:web`, which invokes the full vitest suite (extension shell
-tests included), the browser-test suite, and the extension's production
-webpack build. A webpack-config or shared-pipeline regression fails the
-job on its own line.
 
 ## Internationalisation
 
-The extension uses **key-as-content** i18n (matches the readest-app's
-`stubTranslation as _` convention): the English source string IS the
+The extension uses **key-as-content** i18n: the English source string IS the
 lookup key. Import as `_` at every call site to mirror the main repo:
 
 ```ts
 import { translate as _ } from '../lib/i18n';
 
-_('Send to Readest');
+_('Send to Yomi');
 _('Sent — {count} images could not be fetched.', { count });
 ```
 
@@ -196,13 +182,8 @@ Two parallel translation surfaces:
 
 | Folder | Scope | When it's read |
 |---|---|---|
-| `src/locales/<lang>.json` | 31 runtime UI strings — popup, errors, status, badges. `{ "<english source>": "<translation>" }`. | At runtime by the `_(...)` helper. Falls through to the English key when an entry is missing or set to the `__STRING_NOT_TRANSLATED__` sentinel. |
+| `src/locales/<lang>.json` | Runtime UI strings — popup, errors, status, badges. `{ "<english source>": "<translation>" }`. | At runtime by the `_(...)` helper. Falls through to the English key when an entry is missing or set to the `__STRING_NOT_TRANSLATED__` sentinel. |
 | `_locales/<lang>/messages.json` | Three manifest fields — `app_name`, `app_description`, `action_title` — referenced as `__MSG_*__` in `manifest.json`. | At install time + by the Chrome Web Store listing. Chrome falls back to `default_locale` (en) automatically, so a locale file is only needed when you want to override the toolbar tooltip / store copy. |
-
-The full set of supported locales lives in
-`apps/readest-app/i18n-langs.json`. The extension's extractor reads the
-same file, so a locale added there ships in the extension automatically
-on the next `pnpm i18n:extract` run.
 
 ### Extracting strings
 
@@ -213,51 +194,8 @@ pnpm i18n:extract           # populates every src/locales/*.json with new keys
 pnpm i18n:check              # exits non-zero if any bundle has untranslated entries
 ```
 
-The extractor:
-
-1. Reads the canonical locale list from
-   `apps/readest-app/i18n-langs.json` and ensures a stub
-   `src/locales/<lang>.json` exists for every entry (creates an empty
-   `{}` for any missing locale).
-2. Scans every `.ts`/`.tsx` (skipping `*.test.ts`) and every `.html` file
-   under the extension.
-3. Pulls source strings from `_('…')` calls AND `data-i18n` /
-   `data-i18n-title` HTML attributes.
-4. For every non-`en` locale: adds missing entries with
-   `__STRING_NOT_TRANSLATED__` (same sentinel readest-app uses), keeps
-   existing translations, sorts keys for deterministic diffs.
-5. Regenerates `src/locales/index.ts` with one static import per locale
-   bundle — the runtime helper reads its `bundles` map.
-6. Mirrors the locale list into `_locales/<lang>/messages.json` stubs
-   (Chrome's native i18n surface for manifest fields). Existing
-   translations are never overwritten — only missing locales get
-   created as `__STRING_NOT_TRANSLATED__` stubs.
-7. Logs orphan entries (in the bundle but no longer in code) so a
-   translator can decide whether to drop them.
-
-The runtime helper filters sentinel entries at load time, so a
-partially-translated bundle gracefully falls back to English per-key
-instead of leaking placeholders into the UI.
-
-### Adding a locale
-
-To add a locale the extension ships in lockstep with the main app:
-
-1. Add the code to `apps/readest-app/i18n-langs.json`.
-2. `pnpm i18n:extract` from the extension dir — creates
-   `src/locales/<code>.json` populated with `__STRING_NOT_TRANSLATED__`
-   placeholders, regenerates `src/locales/index.ts`.
-3. Hand-translate each value.
-4. *(Optional)* Drop `_locales/<code>/messages.json` mirroring the en
-   file if you want the toolbar tooltip / Chrome Web Store listing
-   translated too. Chrome falls back to `en` when this is missing.
-5. Rebuild — webpack picks up the new JSON via the regenerated index.
-
 ## Before publishing to the Chrome Web Store
 
-- Replace the icon set (currently a 1:1 downscale of the Readest app icon)
-  with extension-specific artwork.
-- Add a screenshot bundle and a privacy disclosure: the extension reads the
-  page DOM and fetches its image references; nothing is sent off-device
-  except to the Readest inbox.
-- Submit through the Chrome Web Store Developer Dashboard (review required).
+- Verify icon set in `icons/` reflects Yomi's logo.
+- Add a screenshot bundle and verify privacy disclosures in `STORE-SUBMISSION.md`.
+- Submit through the Chrome Web Store Developer Dashboard.

@@ -148,12 +148,12 @@ async function runClip(tabId: number): Promise<void> {
     // here because the SW also serves clips the popup never gated (a stale
     // popup, a keyboard-invoked clip).
     if (isLocalFileUrl(tab.url) && !(await hasFileSchemeAccess())) {
-      return emitError('restricted-page', _('Readest needs permission to read local files.'));
+      return emitError('restricted-page', _('Yomi needs permission to read local files.'));
     }
 
     const stored = await readToken();
     if (!stored) {
-      return emitError('not-signed-in', _('Sign in at web.readest.com first'));
+      return emitError('not-signed-in', _('Sign in to Yomi first'));
     }
 
     setBadge('cap');

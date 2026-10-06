@@ -15,7 +15,7 @@ import type { ClipProgress, StatusResponse } from '../lib/messages';
 
 const POPUP_DOM = `
   <header>
-    <h1>Send to Readest</h1>
+    <h1>Send to Yomi</h1>
     <span id="auth-badge" class="signed-out-badge hidden">Signed out</span>
   </header>
   <section id="signed-in-view">
@@ -23,7 +23,7 @@ const POPUP_DOM = `
       <p id="page-title" class="page-title">Loading…</p>
       <p id="page-url" class="page-url"></p>
     </div>
-    <button id="send" class="primary" disabled>Send to Readest</button>
+    <button id="send" class="primary" disabled>Send to Yomi</button>
     <div id="progress" class="progress">
       <div class="progress-label" id="progress-label">Preparing…</div>
       <div class="progress-bar indeterminate"><div class="progress-bar-fill"></div></div>
@@ -32,8 +32,8 @@ const POPUP_DOM = `
     <p id="status" class="status"></p>
   </section>
   <section id="signed-out-view" class="sign-in hidden">
-    <p>Sign in to Readest to start clipping pages.</p>
-    <button id="open-readest" class="primary">Open web.readest.com</button>
+    <p>Sign in to Yomi to start clipping pages.</p>
+    <button id="open-readest" class="primary">Sign in to Yomi</button>
   </section>
 `;
 
@@ -154,6 +154,18 @@ describe('popup — initial render', () => {
       url: 'chrome://extensions/?id=test-extension-id',
     });
   });
+
+  test('the sign-in button opens Yomi auth page', async () => {
+    setStatus({ signedIn: false });
+    await loadPopup();
+
+    document
+      .getElementById('open-readest')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(chromeMock.tabs.create).toHaveBeenCalledWith({
+      url: 'https://biblophile.com/yomi/auth',
+    });
+  });
 });
 
 describe('popup — render(progress)', () => {
@@ -169,7 +181,7 @@ describe('popup — render(progress)', () => {
     expect(document.getElementById('progress-label')?.textContent).toBe('Building EPUB…');
 
     pushProgress({ phase: 'uploading' });
-    expect(document.getElementById('progress-label')?.textContent).toBe('Sending to Readest…');
+    expect(document.getElementById('progress-label')?.textContent).toBe('Sending to Yomi…');
 
     pushProgress({ phase: 'done' });
     expect(document.getElementById('progress')?.classList.contains('show')).toBe(false);

@@ -16,7 +16,7 @@ import {
   isLocalFileUrl,
 } from '../lib/localPage';
 
-const LOGIN_URL = 'https://biblophile.com/yomi';
+const LOGIN_URL = 'https://biblophile.com/yomi/auth';
 
 localizeDom();
 
@@ -77,7 +77,7 @@ function render(progress: ClipProgress | null): void {
       break;
     case 'uploading':
       sendBtn.disabled = true;
-      showProgress(_('Sending to Readest…'));
+      showProgress(_('Sending to Yomi…'));
       setStatus('');
       break;
     case 'done':
@@ -150,7 +150,7 @@ async function init(): Promise<void> {
   if (isLocalFileUrl(url) && !(await hasFileSchemeAccess())) {
     sendBtn.disabled = true;
     enableFileAccessBtn.classList.remove('hidden');
-    setStatus(_('Readest needs permission to read local files.'));
+    setStatus(_('Yomi needs permission to read local files.'));
     return;
   }
 
