@@ -4,6 +4,8 @@ import posthog from 'posthog-js';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getOSPlatform } from '@/utils/misc';
 import { trackYomiSignupClicked } from '@/utils/telemetry';
+import { isTauriAppPlatform } from '@/services/environment';
+import { openExternalUrl } from '@/utils/open';
 import EmailPasswordAuth from './EmailPasswordAuth';
 
 const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
@@ -62,8 +64,14 @@ export default function AuthPanel({
               href={getSignupUrl()}
               target='_blank'
               rel='noopener noreferrer'
-              onClick={() => trackYomiSignupClicked(getOSPlatform())}
-              className='underline underline-offset-2 hover:text-base-content transition-colors'
+              onClick={(e) => {
+                if (isTauriAppPlatform()) {
+                  e.preventDefault();
+                  openExternalUrl(getSignupUrl());
+                }
+                trackYomiSignupClicked(getOSPlatform());
+              }}
+              className='underline underline-offset-2 hover:text-base-content transition-colors cursor-pointer'
             >
               {_('Sign up on Biblophile')}
             </a>
