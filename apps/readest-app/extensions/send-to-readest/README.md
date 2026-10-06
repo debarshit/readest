@@ -111,9 +111,9 @@ stores a password or refresh token.
 
 ```bash
 # From the extension directory:
-pnpm install   # one-time — the extension is a pnpm workspace package
-pnpm build     # produces dist/ ready to load unpacked
-pnpm dev       # watch mode while developing
+npm run build   # produces dist/ ready to load unpacked (or: pnpm build)
+npm run dev     # watch mode while developing
+npm run zip     # builds & packages send-to-yomi-<version>.zip for the Chrome Web Store
 ```
 
 The build is webpack-based:
@@ -194,8 +194,33 @@ pnpm i18n:extract           # populates every src/locales/*.json with new keys
 pnpm i18n:check              # exits non-zero if any bundle has untranslated entries
 ```
 
+## Packaging for the Chrome Web Store
+
+To build and package the upload-ready `.zip` file for the Chrome Web Store Developer Dashboard:
+
+```bash
+# Navigate to the extension directory:
+cd apps/readest-app/extensions/send-to-readest
+
+# Build production bundle and generate the zip:
+npm run zip
+```
+
+This compiles the code into `dist/` and creates:
+```
+send-to-yomi-<version>.zip  (e.g., send-to-yomi-0.2.1.zip)
+```
+
+The resulting zip archive:
+- Places `manifest.json` directly at the root (as required by the Chrome Web Store).
+- Strips out macOS `.DS_Store` noise and extra `.LICENSE.txt` files.
+- Includes pre-rendered icons, service worker, and 34 language bundles.
+
+All developer console answers, single-purpose explanations, and permission justifications are prepared in [`STORE-SUBMISSION.md`](./STORE-SUBMISSION.md).
+
 ## Before publishing to the Chrome Web Store
 
-- Verify icon set in `icons/` reflects Yomi's logo.
-- Add a screenshot bundle and verify privacy disclosures in `STORE-SUBMISSION.md`.
-- Submit through the Chrome Web Store Developer Dashboard.
+1. Run `npm run zip` to generate the latest `send-to-yomi-<version>.zip`.
+2. Ensure you have at least one store screenshot (1280×800 or 640×400).
+3. Open the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
+4. Click **+ New Item**, upload `send-to-yomi-<version>.zip`, and copy-paste the metadata from `STORE-SUBMISSION.md`.

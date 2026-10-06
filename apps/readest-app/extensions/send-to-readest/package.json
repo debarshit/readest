@@ -1,5 +1,5 @@
 {
-  "name": "@yomi/send-to-yomi-extension",
+  "name": "@readest/send-to-readest-extension",
   "version": "0.2.1",
   "private": true,
   "description": "Browser extension that clips the current web page into the user's Yomi library as a self-contained EPUB.",
@@ -7,7 +7,7 @@
     "build": "webpack --mode production",
     "dev": "webpack --watch --mode development",
     "clean": "rimraf dist",
-    "zip": "pnpm build && node scripts/zip.mjs",
+    "zip": "npm run build && node scripts/zip.mjs",
     "store:screenshots": "node store/generate.mjs",
     "i18n:extract": "node scripts/extract-i18n.mjs",
     "i18n:check": "node scripts/extract-i18n.mjs --check"
