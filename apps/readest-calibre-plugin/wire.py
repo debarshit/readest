@@ -33,7 +33,8 @@ EXTS = {
     'MD': 'md',
 }
 
-CLOUD_BOOKS_SUBDIR = 'Readest/Books'
+CLOUD_BOOKS_SUBDIR = 'Yomi/Books'
+LEGACY_CLOUD_BOOKS_SUBDIR = 'Readest/Books'
 COVER_FILE_NAME = 'cover.png'
 
 # calibre marks: in-memory labels shown in the book list and searchable as
@@ -81,19 +82,20 @@ def cover_file_name(file_hash):
 def cloud_book_hashes(files):
     """Book hashes that still have a book blob (not just a cover) in storage.
 
-    Read from the file key (`{user_id}/Readest/Books/{hash}/{name}`) rather
-    than the row's `book_hash`, which is only set when the uploader passed it.
+    Read from the file key (`{user_id}/Yomi/Books/{hash}/{name}` or legacy `{user_id}/Readest/...`)
+    rather than the row's `book_hash`, which is only set when the uploader passed it.
     """
-    marker = CLOUD_BOOKS_SUBDIR + '/'
+    markers = (CLOUD_BOOKS_SUBDIR + '/', LEGACY_CLOUD_BOOKS_SUBDIR + '/')
     hashes = set()
     for record in files or []:
         key = record.get('file_key') or ''
-        index = key.find(marker)
-        if index < 0:
-            continue
-        book_hash, _, name = key[index + len(marker) :].partition('/')
-        if book_hash and name and name != COVER_FILE_NAME:
-            hashes.add(book_hash)
+        for marker in markers:
+            index = key.find(marker)
+            if index >= 0:
+                book_hash, _, name = key[index + len(marker) :].partition('/')
+                if book_hash and name and name != COVER_FILE_NAME:
+                    hashes.add(book_hash)
+                break
     return hashes
 
 

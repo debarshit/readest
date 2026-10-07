@@ -248,9 +248,6 @@ export const useBooksSync = () => {
     const processOldBook = async (oldBook: Book) => {
       const matchingBook = syncedByHash.get(oldBook.hash);
       if (matchingBook) {
-        if (coverRefreshHashes.has(oldBook.hash)) {
-          oldBook.coverImageUrl = await appService?.generateCoverImageUrl(oldBook);
-        }
         const mergedBook =
           matchingBook.updatedAt >= oldBook.updatedAt
             ? { ...oldBook, ...matchingBook, syncedAt: Date.now() }
@@ -265,6 +262,9 @@ export const useBooksSync = () => {
         const cover = pickFresherCover(oldBook, matchingBook);
         mergedBook.coverHash = cover.coverHash;
         mergedBook.coverUpdatedAt = cover.coverUpdatedAt;
+        if (coverRefreshHashes.has(oldBook.hash)) {
+          mergedBook.coverImageUrl = await appService?.generateCoverImageUrl(mergedBook);
+        }
         // The metadata group merges on its own metadataUpdatedAt clock so a
         // metadata edit survives losing whole-row LWW to page-turn progress
         // (issue #5438). Null means neither side is fresher — the row-level

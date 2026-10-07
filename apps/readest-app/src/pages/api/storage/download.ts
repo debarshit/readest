@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
-import { getDownloadSignedUrl } from '@/utils/object';
+import { getDownloadSignedUrl, objectExists } from '@/utils/object';
 import { validateUserAndToken } from '@/utils/access';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -89,22 +89,62 @@ async function processFileKeys(
 
   const fileRecordMap = new Map((fileRecords || []).map((record) => [record.file_key, record]));
 
-  const missingFileKeys = fileKeys.filter((key) => !fileRecordMap.has(key));
+  // Step 1: Check prefix alias (Yomi <-> Readest) in database
+  let missingFileKeys = fileKeys.filter((key) => !fileRecordMap.has(key));
+  if (missingFileKeys.length > 0) {
+    const aliasToOriginal = new Map<string, string>();
+    for (const key of missingFileKeys) {
+      if (key.includes('/Yomi/Books/')) {
+        const alias = key.replace('/Yomi/Books/', '/Readest/Books/');
+        aliasToOriginal.set(alias, key);
+      } else if (key.includes('/Readest/Books/')) {
+        const alias = key.replace('/Readest/Books/', '/Yomi/Books/');
+        aliasToOriginal.set(alias, key);
+      }
+    }
 
+    if (aliasToOriginal.size > 0) {
+      const aliasKeys = Array.from(aliasToOriginal.keys());
+      const { data: aliasRecords } = await supabase
+        .from('files')
+        .select('user_id, file_key, book_hash')
+        .eq('user_id', userId)
+        .in('file_key', aliasKeys)
+        .is('deleted_at', null);
+
+      if (aliasRecords) {
+        for (const record of aliasRecords) {
+          const originalKey = aliasToOriginal.get(record.file_key);
+          if (originalKey) {
+            fileRecordMap.set(originalKey, record);
+          }
+        }
+      }
+    }
+  }
+
+  // Step 2: Book hash & file extension fallback (bidirectional for both Yomi and Readest)
+  missingFileKeys = fileKeys.filter((key) => !fileRecordMap.has(key));
   if (missingFileKeys.length > 0) {
     const fallbackCandidates = missingFileKeys
-      .filter((key) => key.includes('Readest/Book'))
       .map((key) => {
         const parts = key.split('/');
-        if (parts.length === 5) {
-          const bookHash = parts[3]!;
-          const filename = parts[4]!;
+        const booksIdx = parts.indexOf('Books');
+        if (booksIdx !== -1 && parts.length > booksIdx + 2) {
+          const bookHash = parts[booksIdx + 1]!;
+          const filename = parts.slice(booksIdx + 2).join('/');
           const fileExtension = filename.split('.').pop() || '';
-          return { originalKey: key, bookHash, fileExtension };
+          const isCover = filename === 'cover.png';
+          return { originalKey: key, bookHash, fileExtension, isCover };
         }
         return null;
       })
-      .filter(Boolean) as Array<{ originalKey: string; bookHash: string; fileExtension: string }>;
+      .filter(Boolean) as Array<{
+      originalKey: string;
+      bookHash: string;
+      fileExtension: string;
+      isCover: boolean;
+    }>;
 
     if (fallbackCandidates.length > 0) {
       const bookHashes = [...new Set(fallbackCandidates.map((c) => c.bookHash))];
@@ -121,7 +161,9 @@ async function processFileKeys(
           const matchedFile = fallbackRecords.find(
             (f) =>
               f.book_hash === candidate.bookHash &&
-              f.file_key.endsWith(`.${candidate.fileExtension}`),
+              (candidate.isCover
+                ? f.file_key.endsWith('/cover.png')
+                : f.file_key.endsWith(`.${candidate.fileExtension}`)),
           );
           if (matchedFile) {
             fileRecordMap.set(candidate.originalKey, matchedFile);
@@ -129,6 +171,64 @@ async function processFileKeys(
         }
       }
     }
+  }
+
+  // Step 3: Direct R2 check & opportunistic Supabase backfill for any still-missing keys
+  missingFileKeys = fileKeys.filter((key) => !fileRecordMap.has(key));
+  if (missingFileKeys.length > 0) {
+    await Promise.all(
+      missingFileKeys.map(async (key) => {
+        let candidateKey: string | null = key;
+        let exists = await objectExists(key);
+        if (!exists) {
+          if (key.includes('/Yomi/Books/')) {
+            const alias = key.replace('/Yomi/Books/', '/Readest/Books/');
+            if (await objectExists(alias)) {
+              candidateKey = alias;
+              exists = true;
+            }
+          } else if (key.includes('/Readest/Books/')) {
+            const alias = key.replace('/Readest/Books/', '/Yomi/Books/');
+            if (await objectExists(alias)) {
+              candidateKey = alias;
+              exists = true;
+            }
+          }
+        }
+
+        if (exists && candidateKey) {
+          const parts = candidateKey.split('/');
+          const booksIdx = parts.indexOf('Books');
+          const bookHash =
+            booksIdx !== -1 && parts.length > booksIdx + 1 ? parts[booksIdx + 1]! : null;
+          const recoveredRecord = {
+            user_id: userId,
+            file_key: candidateKey,
+            book_hash: bookHash,
+          };
+          fileRecordMap.set(key, recoveredRecord);
+
+          // Opportunistic backfill into files table
+          supabase
+            .from('files')
+            .upsert(
+              {
+                user_id: userId,
+                file_key: candidateKey,
+                book_hash: bookHash,
+                file_size: 0,
+                updated_at: new Date().toISOString(),
+                deleted_at: null,
+              },
+              { onConflict: 'file_key' },
+            )
+            .then(() => {})
+            .catch((err) => {
+              console.warn('Opportunistic backfill error for %s:', candidateKey, err);
+            });
+        }
+      }),
+    );
   }
 
   const results = await Promise.allSettled(

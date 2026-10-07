@@ -301,7 +301,7 @@ export async function downloadBookCovers(
         if (!file.downloadUrl) return;
         await downloadFile({ appService, dst, cfp: file.cfp, url: file.downloadUrl });
         const book = booksLfps.get(file.lfp);
-        if (book && !book.coverDownloadedAt) {
+        if (book) {
           book.coverDownloadedAt = Date.now();
         }
       } catch (error) {

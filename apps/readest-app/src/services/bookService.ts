@@ -244,7 +244,10 @@ export interface CoverContext {
 }
 
 export function getCoverImageUrl(ctx: CoverContext, book: Book): string {
-  return ctx.fs.getURL(`${ctx.localBooksDir}/${getCoverFilename(book)}`);
+  const url = ctx.fs.getURL(`${ctx.localBooksDir}/${getCoverFilename(book)}`);
+  const version = book.coverHash || book.coverUpdatedAt;
+  if (!version) return url;
+  return url.includes('?') ? `${url}&v=${version}` : `${url}?v=${version}`;
 }
 
 export async function getCoverImageBlobUrl(ctx: CoverContext, book: Book): Promise<string> {

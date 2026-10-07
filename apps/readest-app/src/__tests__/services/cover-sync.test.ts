@@ -116,7 +116,7 @@ describe('uploadBookCover (issue #4544)', () => {
     expect(fs.openFile).toHaveBeenCalledWith(
       'abc123/cover.png',
       'Books',
-      'Readest/Books/abc123/cover.png',
+      'Yomi/Books/abc123/cover.png',
     );
     expect(book.uploadedAt).toBe(1000); // unchanged
   });

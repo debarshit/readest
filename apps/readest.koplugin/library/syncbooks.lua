@@ -17,8 +17,8 @@ local EXTS = require("library.exts")
 -- Constants
 -- ---------------------------------------------------------------------------
 -- Cloud storage layout under each user's bucket prefix. Web side calls this
--- CLOUD_BOOKS_SUBDIR ("Readest/Books") at apps/readest-app/src/services/constants.ts:35.
-local CLOUD_BOOKS_SUBDIR = "Readest/Books"
+-- CLOUD_BOOKS_SUBDIR ("Yomi/Books") at apps/readest-app/src/services/constants.ts:48.
+local CLOUD_BOOKS_SUBDIR = "Yomi/Books"
 
 -- The server's /storage/download fallback accepts any 5-part fileKey shaped
 -- like {user_id}/Readest/Books/{book_hash}/{anything}.{ext} and resolves it

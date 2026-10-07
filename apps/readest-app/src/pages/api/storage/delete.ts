@@ -24,16 +24,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      // 1. Delete object from R2/S3
+      // 1. Delete object from R2/S3 (and alias if present)
       await deleteObject(fileKey);
+      let aliasKey: string | null = null;
+      if (fileKey.includes('/Yomi/Books/')) {
+        aliasKey = fileKey.replace('/Yomi/Books/', '/Readest/Books/');
+      } else if (fileKey.includes('/Readest/Books/')) {
+        aliasKey = fileKey.replace('/Readest/Books/', '/Yomi/Books/');
+      }
+      if (aliasKey) {
+        await deleteObject(aliasKey).catch(() => {});
+      }
 
       // 2. Soft delete in Supabase
       const supabase = createSupabaseAdminClient();
+      const keysToSoftDelete = [fileKey, ...(aliasKey ? [aliasKey] : [])];
       const { error: supabaseError } = await supabase
         .from('files')
         .update({ deleted_at: new Date().toISOString() })
         .eq('user_id', user.id)
-        .eq('file_key', fileKey);
+        .in('file_key', keysToSoftDelete);
 
       if (supabaseError) {
         console.error('Error soft-deleting file metadata in Supabase:', supabaseError);
