@@ -75,7 +75,7 @@ const indexedDBFileSystem: FileSystem = {
       const content = await this.readFile(path, base, 'binary');
       return URL.createObjectURL(new Blob([content]));
     } catch {
-      return path;
+      return isValidURL(path) ? path : '';
     }
   },
   async getImageURL(path: string) {
