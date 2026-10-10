@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  DEFAULT_ALIAS_NAMED_KEY,
   getLocalSendAlias,
   isLocalSendEnabled,
   setLocalSendAlias,
@@ -36,5 +37,9 @@ describe('Nearby BookDrop enable preference', () => {
     expect(getLocalSendAlias()).toBe('');
     setLocalSendAlias('Study Mac');
     expect(getLocalSendAlias()).toBe('Study Mac');
+  });
+
+  it('defines the default alias named key with brand placeholder', () => {
+    expect(DEFAULT_ALIAS_NAMED_KEY).toBe("{{name}}'s {{brand}}");
   });
 });

@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@/services/branding';
 import { describe, expect, it } from 'vitest';
 import { ipTag, localSendDeviceModel, preferredIpTag } from '@/services/localsend/deviceModel';
 
@@ -11,8 +12,8 @@ describe('localSendDeviceModel', () => {
     expect(localSendDeviceModel('linux', false)).toBe('Linux');
   });
 
-  it('falls back to Readest for an unknown platform', () => {
-    expect(localSendDeviceModel('unknown', false)).toBe('Readest');
+  it('falls back to BRAND_NAME for an unknown platform', () => {
+    expect(localSendDeviceModel('unknown', false)).toBe(BRAND_NAME);
   });
 
   it('only splits iPad out of iOS, never other platforms', () => {

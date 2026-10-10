@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { BRAND_NAME } from '@/services/branding';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLocalSendStore } from '@/store/localsendStore';
 import {
@@ -91,7 +92,8 @@ const LocalSendForm: React.FC<LocalSendFormProps> = ({ onBack }) => {
         parentLabel={_('Integrations')}
         currentLabel={_('Nearby BookDrop')}
         description={_(
-          'Drop books to nearby Readest devices, and to LocalSend apps, over your local network.',
+          'Drop books to nearby {{brand}} devices, and to LocalSend apps, over your local network.',
+          { brand: BRAND_NAME },
         )}
         onBack={onBack}
       />
@@ -99,7 +101,7 @@ const LocalSendForm: React.FC<LocalSendFormProps> = ({ onBack }) => {
       <BoxedList>
         <SettingsSwitchRow
           label={_('Enable Nearby BookDrop')}
-          description={_('Receive books while Readest is open')}
+          description={_('Receive books while {{brand}} is open', { brand: BRAND_NAME })}
           checked={enabled}
           onChange={toggleEnabled}
           data-setting-id='settings.integrations.localsend.enabled'

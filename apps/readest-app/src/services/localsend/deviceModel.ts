@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@/services/branding';
 import type { OsPlatform } from '@/types/system';
 
 /**
@@ -60,6 +61,6 @@ export function localSendDeviceModel(os: OsPlatform, isTablet: boolean): string 
     case 'linux':
       return 'Linux';
     default:
-      return 'Readest';
+      return BRAND_NAME;
   }
 }

@@ -65,7 +65,7 @@ describe('ReceiveRequestDialog pairing opt-in', () => {
 
   it('keeps the locked box at full opacity rather than marking it disabled', () => {
     renderDialog();
-    expect(screen.getByText('Premium')).toBeTruthy();
+    expect(screen.getByText('Plus')).toBeTruthy();
     const box = document.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
     expect(box).not.toBeNull();
     // `disabled` is what triggers daisyUI's opacity:.2 washout.

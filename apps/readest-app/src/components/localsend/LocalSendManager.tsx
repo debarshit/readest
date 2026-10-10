@@ -9,6 +9,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useLocalSendStore } from '@/store/localsendStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { ingestFile } from '@/services/ingestService';
+import { BRAND_NAME } from '@/services/branding';
 import { isNearbyPairingAllowed } from '@/utils/access';
 import {
   DEFAULT_ALIAS_NAMED_KEY,
@@ -105,12 +106,13 @@ const LocalSendManager: React.FC = () => {
   }, [appService]);
 
   const defaultAlias = useCallback(async (): Promise<string> => {
-    // Prefer the signed-in user's name, AirDrop style: "<name>'s Readest".
+    // Prefer the signed-in user's name, AirDrop style: "<name>'s {{brand}}".
     // Match the library main menu ("Logged in as {{name}}"): first name only.
-    const fullName: unknown = userRef.current?.user_metadata?.['full_name'];
+    const fullName: unknown =
+      userRef.current?.user_metadata?.['full_name'] || userRef.current?.user_metadata?.['name'];
     if (typeof fullName === 'string' && fullName.trim()) {
       const name = fullName.trim().split(' ')[0];
-      return translateRef.current(DEFAULT_ALIAS_NAMED_KEY, { name });
+      return translateRef.current(DEFAULT_ALIAS_NAMED_KEY, { name, brand: BRAND_NAME });
     }
     try {
       const { hostname } = await import('@tauri-apps/plugin-os');
@@ -119,7 +121,7 @@ const LocalSendManager: React.FC = () => {
     } catch {
       /* fall through to the generic default */
     }
-    return 'Readest';
+    return BRAND_NAME;
   }, []);
 
   // Service lifecycle: match the running state to the per-device preference.
